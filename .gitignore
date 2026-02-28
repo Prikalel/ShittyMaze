@@ -1,0 +1,30 @@
+﻿# IDE
+.idea
+.vs
+.vscode
+*.user
+*.suo
+.roo
+
+# Build outputs
+bin
+obj
+[Bb]in/
+[Oo]bj/
+
+# NuGet
+packages/
+*.nupkg
+NuGeT.config
+
+# Blazor/WebAssembly
+wwwroot/dist/
+publish/
+
+# Content build outputs
+Content/bin/
+Content/obj/
+*.mgcbrc
+
+# Logs
+*.log

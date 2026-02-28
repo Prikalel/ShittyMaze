@@ -28,17 +28,6 @@ namespace Maze3D.Physics
         }
 
         /// <summary>
-        /// Creates a new collision detector with custom player radius.
-        /// </summary>
-        /// <param name="mazeData">The maze data to check collisions against.</param>
-        /// <param name="playerRadius">The player's collision radius.</param>
-        public CollisionDetector(MazeData mazeData, float playerRadius)
-        {
-            this.mazeData = mazeData;
-            this.playerRadius = playerRadius;
-        }
-
-        /// <summary>
         /// Checks if a position collides with any wall in the maze.
         /// </summary>
         /// <param name="position">The world position to check.</param>
@@ -97,52 +86,6 @@ namespace Maze3D.Physics
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Resolves collision by returning an adjusted position that doesn't collide.
-        /// </summary>
-        /// <param name="position">The desired position.</param>
-        /// <param name="velocity">The velocity that led to this position.</param>
-        /// <returns>The adjusted position after collision resolution.</returns>
-        public Vector3 ResolveCollision(Vector3 position, Vector3 velocity)
-        {
-            // If no collision, return original position
-            if (!CheckCollision(position))
-            {
-                return position;
-            }
-
-            // Try moving only in X
-            Vector3 xOnly = new Vector3(position.X, position.Y, position.Z - velocity.Z);
-            if (!CheckCollision(xOnly))
-            {
-                return xOnly;
-            }
-
-            // Try moving only in Z
-            Vector3 zOnly = new Vector3(position.X - velocity.X, position.Y, position.Z);
-            if (!CheckCollision(zOnly))
-            {
-                return zOnly;
-            }
-
-            // If both fail, return original position minus full velocity (no movement)
-            return position - velocity;
-        }
-
-        /// <summary>
-        /// Checks if a position is within the maze bounds.
-        /// </summary>
-        /// <param name="position">The position to check.</param>
-        /// <returns>True if within bounds, false otherwise.</returns>
-        public bool IsWithinBounds(Vector3 position)
-        {
-            float mazeWidth = mazeData.GetWorldWidth();
-            float mazeHeight = mazeData.GetWorldHeight();
-
-            return position.X >= 0 && position.X < mazeWidth &&
-                   position.Z >= 0 && position.Z < mazeHeight;
         }
     }
 }

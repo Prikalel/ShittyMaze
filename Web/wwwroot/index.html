@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ShittyMaze - 3D Maze Game</title>
+    <base href="/" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #app {
+            width: 100%;
+            height: 100%;
+        }
+        
+        #theCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+
+        #blazor-error-ui {
+            background: lightyellow;
+            bottom: 0;
+            box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+            display: none;
+            left: 0;
+            padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        #blazor-error-ui .dismiss {
+            cursor: pointer;
+            position: absolute;
+            right: 0.75rem;
+            top: 0.5rem;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; background-color: #1a1a2e; color: #00d4ff;">
+            <div style="width: 50px; height: 50px; border: 3px solid #333; border-top-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <p style="margin-top: 20px;">Loading ShittyMaze...</p>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <!-- Blazor WebAssembly with autostart disabled for Brotli decompression support -->
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    
+    <!-- Brotli decompression support -->
+    <script type="module">
+        import { BrotliDecode } from './js/decode.min.js';
+        window.BrotliDecode = BrotliDecode;
+        // Set this to enable Brotli (.br) decompression on static webServers
+        // that don't support content compression and http://.
+        var enableBrotliDecompression = false;
+        Blazor.start({
+            loadBootResource: function (type, name, defaultUri, integrity)
+            {
+                if (enableBrotliDecompression === true && type !== 'dotnetjs' && location.hostname !== 'localhost')
+                {
+                    return (async function()
+                    {
+                        const response = await fetch(defaultUri + '.br', { cache: 'no-cache' });
+                        if (!response.ok)
+                            throw new Error(response.statusText);
+                        const originalResponseBuffer = await response.arrayBuffer();
+                        const originalResponseArray = new Int8Array(originalResponseBuffer);
+                        const contentType = (type === 'dotnetwasm')
+                                          ? 'application/wasm'
+                                          : 'application/octet-stream';
+                        const decompressedResponseArray = BrotliDecode(originalResponseArray);
+                        return new Response(decompressedResponseArray,
+                                            { headers: { 'content-type': contentType }
+                                   });
+                    })();
+                }
+            }
+        }).then(() => {
+            DotNet.invokeMethodAsync('ShittyMaze.Web', 'SetOrigin', window.location.origin);
+        });
+    </script>
+
+    <!-- nkast.Wasm JavaScript scripts - CRITICAL for KNI platform -->
+    <script src="_content/nkast.Wasm.JSInterop/js/JSObject.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Dom/js/Window.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Dom/js/Document.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Dom/js/Navigator.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Dom/js/Gamepad.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Dom/js/Media.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.XHR/js/XHR.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Canvas/js/Canvas.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Canvas/js/CanvasGLContext.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.Audio/js/Audio.8.0.11.js"></script>
+    <script src="_content/nkast.Wasm.XR/js/XR.8.0.11.js"></script>
+
+    <!-- Game loop initialization and tick functions -->
+    <script>
+        function tickJS()
+        {
+            window.theInstance.invokeMethod('TickDotNet');
+            window.requestAnimationFrame(tickJS);
+        }
+
+        window.initRenderJS = (instance) =>
+        {
+            window.theInstance = instance;
+
+            // set initial canvas size
+            var canvas = document.getElementById('theCanvas');
+            var holder = document.getElementById('canvasHolder');
+            canvas.width = holder.clientWidth;
+            canvas.height = holder.clientHeight;
+            
+            // disable context menu on right click
+            canvas.addEventListener("contextmenu", e => e.preventDefault());
+            
+            // Setup pointer lock for mouse-based camera control
+            setupPointerLock(canvas);
+            
+            // begin game loop
+            window.requestAnimationFrame(tickJS);
+        };
+
+        /// <summary>
+        /// Sets up pointer lock API for FPS-style mouse control.
+        /// Click on canvas to capture mouse, ESC to release.
+        /// </summary>
+        function setupPointerLock(canvas)
+        {
+            // Click to request pointer lock
+            canvas.addEventListener('click', () => {
+                if (!document.pointerLockElement) {
+                    canvas.requestPointerLock();
+                }
+            });
+
+            // Handle mouse movement when pointer is locked
+            document.addEventListener('mousemove', (e) => {
+                if (document.pointerLockElement === canvas) {
+                    // Send mouse delta to .NET
+                    if (window.theInstance) {
+                        window.theInstance.invokeMethod('OnMouseMove', e.movementX, e.movementY);
+                    }
+                }
+            });
+
+            // Handle pointer lock change events
+            document.addEventListener('pointerlockchange', () => {
+                if (document.pointerLockElement === canvas) {
+                    console.log('Pointer locked - mouse control active');
+                } else {
+                    console.log('Pointer unlocked - click canvas to control camera');
+                }
+            });
+
+            // Handle pointer lock error
+            document.addEventListener('pointerlockerror', () => {
+                console.error('Pointer lock error - mouse control may not work');
+            });
+        }
+
+        // Prevent Arrows Keys and Spacebar scrolling the outer page
+        // when running inside an iframe. e.g: itch.io embedding.
+        window.addEventListener("keydown", function(event)
+        {
+            if ([32, 37, 38, 39, 40].indexOf(event.keyCode) > -1)
+                event.preventDefault();
+        });
+
+        // Prevent Mousewheel scrolling the outer page
+        // when running inside an iframe. e.g: itch.io embedding.
+        window.addEventListener("wheel", function(event)
+        {
+            event.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+
+</html>
