@@ -365,3 +365,9 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../wwwroot/Content/Textures/T_random_floor9.jpg;Textures/T_random_floor9.xnb
+
+#begin Fonts/Hud.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Fonts/Hud.spritefont;Fonts/Hud.xnb

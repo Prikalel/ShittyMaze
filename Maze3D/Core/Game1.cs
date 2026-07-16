@@ -82,6 +82,9 @@ namespace Maze3D.Core
         private float shotTimer;
         private bool shootRequested;
 
+        // HUD font for the on-screen level counter (Fonts/Hud, built from a .spritefont).
+        private SpriteFont hudFont;
+
         private string baseUrl;
 
         /// <summary>
@@ -159,6 +162,16 @@ namespace Maze3D.Core
             LoadLevelTextureSets();
             LoadRandomFloorTextures();
             LoadHeartsTextures();
+
+            try
+            {
+                hudFont = Content.Load<SpriteFont>("Fonts/Hud");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading HUD font: {ex.Message}");
+                hudFont = null;
+            }
 
             goalEffect = new BasicEffect(GraphicsDevice)
             {
@@ -542,6 +555,7 @@ namespace Maze3D.Core
 
             DrawFirstPersonWeapon();
             DrawHearts();
+            DrawLevelCounter();
 
             base.Draw(gameTime);
         }
@@ -586,6 +600,29 @@ namespace Maze3D.Core
 
             spriteBatch.Begin();
             spriteBatch.Draw(heart, destination, Color.White);
+            spriteBatch.End();
+        }
+
+        /// <summary>
+        /// Draws the current level number as text at the top-center of the screen.
+        /// A black drop shadow is drawn behind the white text for readability over
+        /// any background.
+        /// </summary>
+        private void DrawLevelCounter()
+        {
+            if (hudFont == null)
+                return;
+
+            string text = $"Level {levelNumber}";
+
+            Viewport viewport = GraphicsDevice.Viewport;
+            Vector2 textSize = hudFont.MeasureString(text);
+            Vector2 position = new Vector2((viewport.Width - textSize.X) * 0.5f, 12f);
+
+            spriteBatch.Begin();
+            // Drop shadow for contrast over any background.
+            spriteBatch.DrawString(hudFont, text, position + Vector2.One, Color.Black);
+            spriteBatch.DrawString(hudFont, text, position, Color.White);
             spriteBatch.End();
         }
 
