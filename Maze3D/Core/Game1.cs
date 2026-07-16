@@ -32,6 +32,7 @@ namespace Maze3D.Core
         private const int EnemyCount = 3;
 
         private Song playerHitSound;
+        private Song enemyShotSound;
         private readonly List<Projectile> bullets = new List<Projectile>();
         private BasicEffect bulletEffect;
 
@@ -155,6 +156,16 @@ namespace Maze3D.Core
             {
                 Console.WriteLine($"Error loading player hit sound: {ex.Message}");
                 playerHitSound = null;
+            }
+
+            try
+            {
+                enemyShotSound = Content.Load<Song>("Sounds/S_enemy_shot");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading enemy shot sound: {ex.Message}");
+                enemyShotSound = null;
             }
 
             bulletEffect = new BasicEffect(GraphicsDevice)
@@ -285,7 +296,10 @@ namespace Maze3D.Core
                     try
                     {
                         if (shotSound != null)
+                        {
+                            MediaPlayer.Volume = 1f; // Full volume (enemy shots fade it down).
                             MediaPlayer.Play(shotSound);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -547,9 +561,13 @@ namespace Maze3D.Core
 
                 Vector3 spawn = new Vector3(enemy.Position.X, target.Y, enemy.Position.Z);
                 Vector3 dir = new Vector3(target.X - spawn.X, 0f, target.Z - spawn.Z);
-                if (dir.LengthSquared() < 1e-6f)
+                float fireDistance = dir.Length();
+                if (fireDistance < 1e-6f)
                     continue;
                 dir.Normalize();
+
+                // Enemy shot sound: louder up close, fading with distance (in cells).
+                PlayEnemyShotSound(fireDistance / mazeData.CellSize);
 
                 // Precompute the despawn point: first wall along the travel direction.
                 Vector3 despawn = mazeData.GetRayWallHit(spawn, dir);
@@ -609,12 +627,56 @@ namespace Maze3D.Core
 
             try
             {
+                MediaPlayer.Volume = 1f; // Full volume (enemy shots fade it down).
                 MediaPlayer.Play(playerHitSound);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error playing player hit sound: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Plays the enemy shot sound with a volume that depends on the enemy-to-player
+        /// distance at the moment of firing. <paramref name="distanceInCells"/> is the
+        /// distance in cell units (world distance / CellSize):
+        ///   f(x) = 100         if 0 <= x <= 2  (full volume up to 2 cells)
+        ///   f(x) = -25x + 150  if 2 < x <= 6   (linear fade)
+        ///   f(x) = 0           if x > 6          (silent)
+        /// </summary>
+        /// <param name="distanceInCells">Enemy-to-player distance in cell units.</param>
+        private void PlayEnemyShotSound(float distanceInCells)
+        {
+            if (enemyShotSound == null)
+                return;
+
+            float volumePercent = ShotVolumeFromDistance(distanceInCells);
+            if (volumePercent <= 0f)
+                return;
+
+            try
+            {
+                MediaPlayer.Volume = volumePercent / 100f;
+                MediaPlayer.Play(enemyShotSound);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error playing enemy shot sound: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Distance-based enemy shot volume (0..100) per the design spec.
+        /// </summary>
+        /// <param name="x">Distance in cells.</param>
+        /// <returns>Volume percentage 0..100.</returns>
+        private static float ShotVolumeFromDistance(float x)
+        {
+            if (x <= 2f)
+                return 100f;
+            if (x <= 6f)
+                return -25f * x + 150f;
+            return 0f;
         }
     }
 }

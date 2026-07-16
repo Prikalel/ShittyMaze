@@ -99,3 +99,8 @@
 /importer:Mp3Importer
 /processor:SongProcessor
 /build:../wwwroot/Content/Sounds/S_player_got_shot.mp3;Sounds/S_player_got_shot.xnb
+
+#begin Sounds/S_enemy_shot.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../wwwroot/Content/Sounds/S_enemy_shot.mp3;Sounds/S_enemy_shot.xnb
