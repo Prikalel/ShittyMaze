@@ -13,38 +13,35 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin Textures/T_Kirpich_7_BaseColor.bmp
+#begin Textures/T_Kirpich_7_BaseColor.jpg
 /importer:TextureImporter
 /processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
 /processorParam:ColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../wwwroot/Content/Textures/T_Kirpich_7_BaseColor.bmp;Textures/T_Kirpich_7_BaseColor.xnb
+/build:../wwwroot/Content/Textures/T_Kirpich_7_BaseColor.jpg;Textures/T_Kirpich_7_BaseColor.xnb
 
-#begin Textures/T_Wood_Floor_2_BaseColor.bmp
+#begin Textures/T_Wood_Floor_2_BaseColor.jpg
 /importer:TextureImporter
 /processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
 /processorParam:ColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../wwwroot/Content/Textures/T_Wood_Floor_2_BaseColor.bmp;Textures/T_Wood_Floor_2_BaseColor.xnb
+/build:../wwwroot/Content/Textures/T_Wood_Floor_2_BaseColor.jpg;Textures/T_Wood_Floor_2_BaseColor.xnb
 
-#begin Textures/T_Ceiling_Armstrong_1_BaseColor.bmp
+#begin Textures/T_Ceiling_Armstrong_1_BaseColor.jpg
 /importer:TextureImporter
 /processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
 /processorParam:ColorKeyEnabled=True
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:../wwwroot/Content/Textures/T_Ceiling_Armstrong_1_BaseColor.bmp;Textures/T_Ceiling_Armstrong_1_BaseColor.xnb
+/build:../wwwroot/Content/Textures/T_Ceiling_Armstrong_1_BaseColor.jpg;Textures/T_Ceiling_Armstrong_1_BaseColor.xnb
