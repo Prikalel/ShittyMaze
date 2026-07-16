@@ -62,6 +62,9 @@ namespace Maze3D.Core
         private Texture2D defaultCeilingTexture;
         private readonly List<(Texture2D wall, Texture2D floor, Texture2D ceiling)> levelTextureSets = new List<(Texture2D wall, Texture2D floor, Texture2D ceiling)>();
 
+        // Random floor textures used from level 5 onward (T_random_floor1..9).
+        private readonly List<Texture2D> randomFloorTextures = new List<Texture2D>();
+
         // Hearts HUD overlay; index = lives - 1 (0..2).
         private Texture2D[] heartsTextures;
 
@@ -154,6 +157,7 @@ namespace Maze3D.Core
             }
 
             LoadLevelTextureSets();
+            LoadRandomFloorTextures();
             LoadHeartsTextures();
 
             goalEffect = new BasicEffect(GraphicsDevice)
@@ -638,7 +642,9 @@ namespace Maze3D.Core
 
         /// <summary>
         /// Applies the maze texture set for the given level number. Level 1 uses the
-        /// default set; levels >= 2 cycle through the level 2/3/4 texture sets.
+        /// default set; levels >= 2 cycle through the level 2/3/4 texture sets. From
+        /// level 5 onward the floor is overridden with a random T_random_floor
+        /// texture (walls and ceiling keep cycling as before).
         /// </summary>
         /// <param name="level">Current level number (1-based).</param>
         private void ApplyLevelTextures(int level)
@@ -651,7 +657,13 @@ namespace Maze3D.Core
 
             int idx = (level - 2) % levelTextureSets.Count;
             var set = levelTextureSets[idx];
-            mazeRenderer.SetTextures(set.wall, set.floor, set.ceiling);
+
+            Texture2D floor = set.floor;
+            // From level 5 on, fill the whole floor with a random floor texture.
+            if (level >= 5 && randomFloorTextures.Count > 0)
+                floor = randomFloorTextures[gameRandom.Next(randomFloorTextures.Count)];
+
+            mazeRenderer.SetTextures(set.wall, floor, set.ceiling);
         }
 
         /// <summary>
@@ -672,6 +684,25 @@ namespace Maze3D.Core
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error loading level {lvl} textures: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Loads the random floor textures T_random_floor1..9 used from level 5 on.
+        /// Best effort: a missing/failed texture is skipped.
+        /// </summary>
+        private void LoadRandomFloorTextures()
+        {
+            for (int i = 1; i <= 9; i++)
+            {
+                try
+                {
+                    randomFloorTextures.Add(Content.Load<Texture2D>($"Textures/T_random_floor{i}"));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading random floor {i} texture: {ex.Message}");
                 }
             }
         }

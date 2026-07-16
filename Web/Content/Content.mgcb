@@ -266,3 +266,102 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../wwwroot/Content/Textures/T_3_hearts.png;Textures/T_3_hearts.xnb
+
+#begin Textures/T_random_floor1.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor1.jpg;Textures/T_random_floor1.xnb
+
+#begin Textures/T_random_floor2.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor2.jpg;Textures/T_random_floor2.xnb
+
+#begin Textures/T_random_floor3.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor3.jpg;Textures/T_random_floor3.xnb
+
+#begin Textures/T_random_floor4.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor4.jpg;Textures/T_random_floor4.xnb
+
+#begin Textures/T_random_floor5.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor5.jpg;Textures/T_random_floor5.xnb
+
+#begin Textures/T_random_floor6.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor6.jpg;Textures/T_random_floor6.xnb
+
+#begin Textures/T_random_floor7.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor7.jpg;Textures/T_random_floor7.xnb
+
+#begin Textures/T_random_floor8.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor8.jpg;Textures/T_random_floor8.xnb
+
+#begin Textures/T_random_floor9.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_random_floor9.jpg;Textures/T_random_floor9.xnb
