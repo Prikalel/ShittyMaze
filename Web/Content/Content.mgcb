@@ -105,6 +105,36 @@
 /processor:SoundEffectProcessor
 /build:../wwwroot/Content/Sounds/S_enemy_shot.mp3;Sounds/S_enemy_shot.xnb
 
+#begin Sounds/S_enemy_got_shot.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/build:../wwwroot/Content/Sounds/S_enemy_got_shot.mp3;Sounds/S_enemy_got_shot.xnb
+
+#begin Sounds/S_enemy_dead.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/build:../wwwroot/Content/Sounds/S_enemy_dead.mp3;Sounds/S_enemy_dead.xnb
+
+#begin Sounds/S_main_theme1.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../wwwroot/Content/Sounds/S_main_theme1.mp3;Sounds/S_main_theme1.xnb
+
+#begin Sounds/S_main_theme2.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../wwwroot/Content/Sounds/S_main_theme2.mp3;Sounds/S_main_theme2.xnb
+
+#begin Sounds/S_main_theme3.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../wwwroot/Content/Sounds/S_main_theme3.mp3;Sounds/S_main_theme3.xnb
+
+#begin Sounds/S_main_theme4.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../wwwroot/Content/Sounds/S_main_theme4.mp3;Sounds/S_main_theme4.xnb
+
 #begin Textures/T_level2_wall.jpg
 /importer:TextureImporter
 /processor:TextureProcessor

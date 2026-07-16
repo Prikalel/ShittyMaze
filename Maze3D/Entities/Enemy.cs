@@ -55,6 +55,15 @@ namespace Maze3D.Entities
         private float shootCooldown;   // Time left before the enemy can fire again.
         private float shotSpriteTimer; // Time left the shot sprite stays visible.
 
+        // Health / damage state.
+        private int health;
+        private float damageFlashTimer; // Time left the red damage tint stays visible.
+
+        // Texture tint (BasicEffect.DiffuseColor multiplies the sprite RGB).
+        // Red while the damage flash is active, white (identity) otherwise.
+        private static readonly Vector3 NormalTint = new Vector3(1f, 1f, 1f);
+        private static readonly Vector3 DamageTint = new Vector3(1f, 0.2f, 0.2f);
+
         /// <summary>
         /// Minimum time (seconds) between two shots from the same enemy.
         /// </summary>
@@ -64,6 +73,11 @@ namespace Maze3D.Entities
         /// How long (seconds) the shot sprite is shown after firing.
         /// </summary>
         public const float ShotSpriteDuration = 0.5f;
+
+        /// <summary>
+        /// How long (seconds) the red damage tint is shown after the enemy is hit.
+        /// </summary>
+        public const float DamageFlashDuration = 0.3f;
 
         /// <summary>
         /// Enemy movement speed in world units per second.
@@ -77,6 +91,12 @@ namespace Maze3D.Entities
         /// <summary>True when the shot cooldown has elapsed and the enemy may fire.</summary>
         public bool CanShoot => shootCooldown <= 0f;
 
+        /// <summary>Remaining health points. 0 means destroyed.</summary>
+        public int Health => health;
+
+        /// <summary>True once the enemy has been destroyed (health <= 0).</summary>
+        public bool IsDead => health <= 0;
+
         /// <summary>
         /// Creates a billboard enemy that patrols along a straight segment.
         /// </summary>
@@ -89,12 +109,14 @@ namespace Maze3D.Entities
         /// </param>
         /// <param name="pathEndPosition">World position of the other end of the patrol path.</param>
         /// <param name="size">Quad width and height in world units.</param>
-        public Enemy(GraphicsDevice graphicsDevice, Texture2D texture, Texture2D shotTexture, Vector3 spawnPosition, Vector3 pathEndPosition, float size)
+        /// <param name="health">Starting health points.</param>
+        public Enemy(GraphicsDevice graphicsDevice, Texture2D texture, Texture2D shotTexture, Vector3 spawnPosition, Vector3 pathEndPosition, float size, int health)
         {
             this.graphicsDevice = graphicsDevice;
             this.texture = texture;
             this.shotTexture = shotTexture;
             this.size = size;
+            this.health = health;
 
             // Ground to floor: ignore any incoming Y, base at Y = 0.
             this.position = new Vector3(spawnPosition.X, 0f, spawnPosition.Z);
@@ -158,6 +180,11 @@ namespace Maze3D.Entities
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+            // A destroyed enemy is inert: no movement, no shooting, no sprite revert.
+            // (Game1 removes destroyed enemies from its list, so this is a safety guard.)
+            if (IsDead)
+                return;
+
             // --- Patrol movement ---
             Vector3 toTarget = currentTarget - position;
             toTarget.Y = 0f;
@@ -195,6 +222,14 @@ namespace Maze3D.Entities
                     effect.Texture = texture; // Revert to the default sprite.
                 }
             }
+
+            // --- Damage flash timer (red tint) ---
+            if (damageFlashTimer > 0f)
+            {
+                damageFlashTimer -= dt;
+                if (damageFlashTimer < 0f)
+                    damageFlashTimer = 0f;
+            }
         }
 
         /// <summary>
@@ -213,6 +248,24 @@ namespace Maze3D.Entities
         public void ResetShootCooldown()
         {
             shootCooldown = ShotCooldownDuration;
+        }
+
+        /// <summary>
+        /// Applies damage to the enemy and triggers the red damage tint. Has no
+        /// effect once the enemy is already destroyed.
+        /// </summary>
+        /// <param name="amount">Damage to apply (health points).</param>
+        public void TakeDamage(int amount)
+        {
+            if (IsDead)
+                return;
+
+            health -= amount;
+            if (health < 0)
+                health = 0;
+
+            // Show the red tint regardless of the current sprite (default or firing).
+            damageFlashTimer = DamageFlashDuration;
         }
 
         /// <summary>
@@ -240,6 +293,11 @@ namespace Maze3D.Entities
             effect.World = Matrix.CreateRotationY(angle) * Matrix.CreateTranslation(position);
             effect.View = view;
             effect.Projection = projection;
+
+            // Red tint while the damage flash is active; applies to whichever sprite
+            // (default or firing) is currently bound, so a hit during a shot still
+            // shows red.
+            effect.DiffuseColor = damageFlashTimer > 0f ? DamageTint : NormalTint;
 
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
             {

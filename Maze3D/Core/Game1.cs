@@ -30,12 +30,21 @@ namespace Maze3D.Core
         private Texture2D enemyTexture;
         private Texture2D enemyShotTexture;
         private readonly List<Enemy> enemies = new List<Enemy>();
-        private const int EnemyCount = 3;
 
         private SoundEffect playerHitSound;
         private SoundEffect enemyShotSound;
+        private SoundEffect enemyGotShotSound;  // Played when a player ray hits an enemy.
+        private SoundEffect enemyDeadSound;     // Played when an enemy is destroyed.
         private readonly List<Projectile> bullets = new List<Projectile>();
         private BasicEffect bulletEffect;
+
+        // Shared random source for spawn + shooting target selection.
+        private readonly Random gameRandom = new Random();
+
+        // Looping background music. One track per level (1..4); levels beyond the
+        // available tracks pick one at random. Played via the global MediaPlayer.
+        private Song[] mainThemes;
+        private bool musicStarted;
 
         // Enemy projectile tuning.
         private const float ProjectileSpeed = Player.DefaultSpeed * 2f; // 2x player speed
@@ -186,6 +195,26 @@ namespace Maze3D.Core
                 enemyShotSound = null;
             }
 
+            try
+            {
+                enemyGotShotSound = Content.Load<SoundEffect>("Sounds/S_enemy_got_shot");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading enemy got shot sound: {ex.Message}");
+                enemyGotShotSound = null;
+            }
+
+            try
+            {
+                enemyDeadSound = Content.Load<SoundEffect>("Sounds/S_enemy_dead");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading enemy dead sound: {ex.Message}");
+                enemyDeadSound = null;
+            }
+
             bulletEffect = new BasicEffect(GraphicsDevice)
             {
                 VertexColorEnabled = true,
@@ -197,6 +226,7 @@ namespace Maze3D.Core
             SpawnEnemies();
 
             LoadFirstPersonWeapon();
+            LoadMainThemes();
         }
 
         /// <summary>
@@ -227,6 +257,72 @@ namespace Maze3D.Core
                 Console.WriteLine($"Error loading shot sound: {ex.Message}");
                 shotSound = null;
             }
+        }
+
+        /// <summary>
+        /// Loads the looping background themes S_main_theme1..4. Best effort: a
+        /// missing/failed track is skipped, so only the available ones are kept.
+        /// </summary>
+        private void LoadMainThemes()
+        {
+            var list = new List<Song>();
+            for (int i = 1; i <= 4; i++)
+            {
+                try
+                {
+                    list.Add(Content.Load<Song>($"Sounds/S_main_theme{i}"));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading main theme {i}: {ex.Message}");
+                }
+            }
+            mainThemes = list.ToArray();
+        }
+
+        /// <summary>
+        /// Selects and starts the looping background music for the current level.
+        /// Levels 1..N play their specific track; levels beyond the number of
+        /// available tracks pick one at random. Plays at full (default) volume.
+        /// </summary>
+        private void PlayLevelMusic()
+        {
+            musicStarted = true;
+
+            if (mainThemes == null || mainThemes.Length == 0)
+                return;
+
+            int idx;
+            if (levelNumber >= 1 && levelNumber <= mainThemes.Length)
+                idx = levelNumber - 1;                    // Level 1 -> track 1, etc.
+            else
+                idx = gameRandom.Next(mainThemes.Length); // Beyond available tracks -> random.
+
+            Song theme = mainThemes[idx];
+
+            try
+            {
+                MediaPlayer.IsRepeating = true;
+                MediaPlayer.Volume = 1f;
+                MediaPlayer.Play(theme);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error playing main theme: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Starts the level music on the first user interaction. Browsers only
+        /// unlock the audio context on a user gesture, so the first mouse look,
+        /// key press or shot is used to (re)kick the looping music.
+        /// </summary>
+        private void KickMusic()
+        {
+            if (musicStarted)
+                return;
+
+            PlayLevelMusic();
         }
 
         protected override void Update(GameTime gameTime)
@@ -267,6 +363,8 @@ namespace Maze3D.Core
         {
             mouseDeltaX += deltaX;
             mouseDeltaY += deltaY;
+
+            KickMusic(); // First mouse look (after the pointer-lock click) unlocks audio.
         }
 
         private void HandleMouseRotation()
@@ -294,6 +392,8 @@ namespace Maze3D.Core
         public void RequestShoot()
         {
             shootRequested = true;
+
+            KickMusic(); // A left click is a user gesture that unlocks audio.
         }
 
         /// <summary>
@@ -320,6 +420,11 @@ namespace Maze3D.Core
                     {
                         Console.WriteLine($"Error playing shot sound: {ex.Message}");
                     }
+
+                    // Instant hitscan: a cell-wide ray from the player's cell in the
+                    // cardinal direction the camera faces. Damages the first enemy it
+                    // reaches (or one in the player's own cell). Infinite ammo.
+                    PlayerShoot();
                 }
             }
 
@@ -339,6 +444,7 @@ namespace Maze3D.Core
             if (previousKeyboardState.IsKeyUp(Keys.W) && keyboardState.IsKeyDown(Keys.W))
             {
                 isMoving = true;
+                KickMusic(); // A key press is a user gesture that unlocks audio.
             }
 
             // S, while held, temporarily halts the forward motion. Releasing S
@@ -527,6 +633,7 @@ namespace Maze3D.Core
             camera.Reset();
 
             SpawnEnemies();
+            PlayLevelMusic(); // Switch to the new level's looping track.
         }
 
         /// <summary>
@@ -591,10 +698,15 @@ namespace Maze3D.Core
 
         /// <summary>
         /// (Re)spawns the enemies for the current maze.
-        /// One enemy is always placed in the open cell nearest to the player spawn
-        /// (handy for debugging the billboard render). The rest go in random open
-        /// cells. Open cells exclude the player start (value 2) and the finish
-        /// (value 3), so enemies never overlap the spawn or the goal cube.
+        ///
+        /// All enemies spawn in random distinct open cells (no special-case
+        /// placement). The number of enemies and their health scale with the current
+        /// level:
+        ///   count = level + 2   (level 1 -> 3 enemies, level 2 -> 4, ...)
+        ///   hp    = min(level, 5) (level 1 -> 1 hp, ..., level 5+ -> 5 hp)
+        ///
+        /// Open cells exclude the player start (value 2) and the finish (value 3),
+        /// so enemies never overlap the spawn or the goal cube.
         /// </summary>
         private void SpawnEnemies()
         {
@@ -607,26 +719,10 @@ namespace Maze3D.Core
             if (openCells.Count == 0)
                 return;
 
-            Vector3 playerStart = mazeData.GetStartPosition();
             float enemySize = 0.8f * mazeData.CellSize; // 0.8 of a cell, sprite is square
-
-            // Debug enemy: nearest open cell to the player spawn.
-            int nearestIndex = 0;
-            float nearestDistSq = float.MaxValue;
-            for (int i = 0; i < openCells.Count; i++)
-            {
-                Vector3 w = mazeData.GridToWorld(openCells[i].x, openCells[i].z);
-                float dx = w.X - playerStart.X;
-                float dz = w.Z - playerStart.Z;
-                float distSq = dx * dx + dz * dz;
-                if (distSq < nearestDistSq)
-                {
-                    nearestDistSq = distSq;
-                    nearestIndex = i;
-                }
-            }
-
-            var rng = new Random();
+            int enemyHP = Math.Min(levelNumber, 5);     // HP scales with level, capped at 5.
+            int desiredCount = levelNumber + 2;         // Level 1 -> 3, level 2 -> 4, ...
+            int toSpawn = Math.Min(desiredCount, openCells.Count);
 
             // Creates an enemy at the given open cell and assigns it a straight
             // patrol path that begins at that cell (chosen at spawn, never changes).
@@ -634,24 +730,18 @@ namespace Maze3D.Core
             {
                 var (cx, cz) = openCells[cellIndex];
                 Vector3 spawnWorld = mazeData.GridToWorld(cx, cz);
-                var (fx, fz) = mazeData.GetStraightPathEnd(cx, cz, rng);
+                var (fx, fz) = mazeData.GetStraightPathEnd(cx, cz, gameRandom);
                 Vector3 pathEndWorld = mazeData.GridToWorld(fx, fz);
-                enemies.Add(new Enemy(GraphicsDevice, enemyTexture, enemyShotTexture, spawnWorld, pathEndWorld, enemySize));
+                enemies.Add(new Enemy(GraphicsDevice, enemyTexture, enemyShotTexture, spawnWorld, pathEndWorld, enemySize, enemyHP));
             }
 
-            var used = new HashSet<int> { nearestIndex };
-            SpawnAt(nearestIndex);
-
-            // Remaining enemies: random distinct open cells.
-            int remaining = EnemyCount - 1;
-            while (remaining > 0 && used.Count < openCells.Count)
+            // Random distinct open cells until we reach the desired count.
+            var used = new HashSet<int>();
+            while (enemies.Count < toSpawn)
             {
-                int idx = rng.Next(openCells.Count);
+                int idx = gameRandom.Next(openCells.Count);
                 if (used.Add(idx))
-                {
                     SpawnAt(idx);
-                    remaining--;
-                }
             }
         }
 
@@ -667,7 +757,7 @@ namespace Maze3D.Core
 
             foreach (Enemy enemy in enemies)
             {
-                if (!enemy.CanShoot)
+                if (enemy.IsDead || !enemy.CanShoot)
                     continue;
 
                 // Line of sight between the enemy's cell and the player's cell.
@@ -747,6 +837,148 @@ namespace Maze3D.Core
 
                 if (remove)
                     bullets.RemoveAt(i);
+            }
+        }
+
+        /// <summary>
+        /// Instant hitscan shot fired by the player. A ray one cell wide leaves the
+        /// player's cell in the cardinal direction the camera faces and steps cell by
+        /// cell until it reaches a wall (or the maze edge) or the first cell that
+        /// contains an enemy. The enemy in that cell takes 1 damage; if several
+        /// enemies share the cell (or share the player's cell) a random one is hit.
+        /// The ray stops at the first hit and never damages more than one enemy.
+        /// </summary>
+        private void PlayerShoot()
+        {
+            // Snap the camera's horizontal forward to one of the 4 cardinal axes.
+            Vector3 forward = camera.GetForwardDirection();
+            int dx = 0, dz = 0;
+            if (Math.Abs(forward.X) >= Math.Abs(forward.Z))
+                dx = Math.Sign(forward.X);
+            else
+                dz = Math.Sign(forward.Z);
+
+            // A zero direction (degenerate forward) cannot shoot anywhere.
+            if (dx == 0 && dz == 0)
+                return;
+
+            var (px, pz) = mazeData.WorldToGrid(player.Position);
+
+            // First, an enemy in the player's own cell is hit instantly.
+            Enemy target = FindRandomEnemyInCell(px, pz);
+            int steps = 0;
+
+            if (target == null)
+            {
+                int cx = px;
+                int cz = pz;
+                while (true)
+                {
+                    cx += dx;
+                    cz += dz;
+                    steps++;
+
+                    // A wall (or out of bounds) stops the ray before this cell.
+                    if (mazeData.IsWall(cx, cz))
+                        return;
+
+                    target = FindRandomEnemyInCell(cx, cz);
+                    if (target != null)
+                        break;
+                }
+            }
+
+            // Distance in cells along the ray == number of cells stepped.
+            DamageEnemy(target, steps);
+        }
+
+        /// <summary>
+        /// Returns a random alive enemy currently occupying the given cell, or null
+        /// if none is there. Cell membership follows <see cref="MazeData.WorldToGrid"/>.
+        /// </summary>
+        private Enemy FindRandomEnemyInCell(int cellX, int cellZ)
+        {
+            Enemy found = null;
+            int count = 0;
+            foreach (Enemy enemy in enemies)
+            {
+                if (enemy.IsDead)
+                    continue;
+
+                var (ex, ez) = mazeData.WorldToGrid(enemy.Position);
+                if (ex == cellX && ez == cellZ)
+                {
+                    count++;
+                    // Reservoir sampling: uniform random pick without a second list.
+                    if (gameRandom.Next(count) == 0)
+                        found = enemy;
+                }
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// Applies 1 damage to an enemy, plays the hit sound, and on death plays the
+        /// death sound and removes the enemy (despawn: no longer rendered, moved or
+        /// able to shoot). Both sounds fade with the player-to-enemy distance.
+        /// </summary>
+        /// <param name="enemy">The enemy to damage.</param>
+        /// <param name="distanceInCells">Player-to-enemy distance in cell units.</param>
+        private void DamageEnemy(Enemy enemy, int distanceInCells)
+        {
+            enemy.TakeDamage(1);
+            PlayEnemyGotShotSound(distanceInCells);
+
+            if (enemy.IsDead)
+            {
+                PlayEnemyDeadSound(distanceInCells);
+                enemies.Remove(enemy);
+            }
+        }
+
+        /// <summary>
+        /// Plays the "enemy got shot" sound with distance-based volume.
+        /// </summary>
+        /// <param name="distanceInCells">Player-to-enemy distance in cell units.</param>
+        private void PlayEnemyGotShotSound(float distanceInCells)
+        {
+            if (enemyGotShotSound == null)
+                return;
+
+            float volumePercent = ShotVolumeFromDistance(distanceInCells);
+            if (volumePercent <= 0f)
+                return;
+
+            try
+            {
+                enemyGotShotSound.Play(volumePercent / 100f, 0f, 0f);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error playing enemy got shot sound: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Plays the "enemy dead" sound with distance-based volume.
+        /// </summary>
+        /// <param name="distanceInCells">Player-to-enemy distance in cell units.</param>
+        private void PlayEnemyDeadSound(float distanceInCells)
+        {
+            if (enemyDeadSound == null)
+                return;
+
+            float volumePercent = ShotVolumeFromDistance(distanceInCells);
+            if (volumePercent <= 0f)
+                return;
+
+            try
+            {
+                enemyDeadSound.Play(volumePercent / 100f, 0f, 0f);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error playing enemy dead sound: {ex.Message}");
             }
         }
 
