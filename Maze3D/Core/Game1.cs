@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Media;
 using Microsoft.Xna.Framework.Input;
 using Maze3D.Entities;
 using Maze3D.Maze;
@@ -30,6 +31,18 @@ namespace Maze3D.Core
         private const int EnemyCount = 3;
 
         private bool contentLoaded = false;
+
+        // First-person weapon overlay drawn fullscreen on top of the 3D scene.
+        // The idle weapon (T_fullscreen_first_person_weapon) is always visible;
+        // on a left click the fire frame (..._shot_frame_with_fire) is shown for
+        // ShotDuration seconds (which is also the shot cooldown) before reverting.
+        private SpriteBatch spriteBatch;
+        private Texture2D weaponTexture;
+        private Texture2D weaponShotTexture;
+        private Song shotSound;
+        private const float ShotDuration = 1.0f;
+        private float shotTimer;
+        private bool shootRequested;
 
         private string baseUrl;
 
@@ -124,6 +137,38 @@ namespace Maze3D.Core
 
             // Spawn enemies for the first maze now that the texture is available.
             SpawnEnemies();
+
+            LoadFirstPersonWeapon();
+        }
+
+        /// <summary>
+        /// Loads the fullscreen first-person weapon sprites and the shot sound.
+        /// </summary>
+        private void LoadFirstPersonWeapon()
+        {
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            try
+            {
+                weaponTexture = Content.Load<Texture2D>("Textures/T_fullscreen_first_person_weapon");
+                weaponShotTexture = Content.Load<Texture2D>("Textures/T_fullscreen_first_person_weapon_shot_frame_with_fire");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading weapon textures: {ex.Message}");
+                weaponTexture = null;
+                weaponShotTexture = null;
+            }
+
+            try
+            {
+                shotSound = Content.Load<Song>("Sounds/S_shot");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading shot sound: {ex.Message}");
+                shotSound = null;
+            }
         }
 
         protected override void Update(GameTime gameTime)
@@ -135,6 +180,7 @@ namespace Maze3D.Core
 
             HandleMovement(deltaTime);
             HandleMouseRotation();
+            UpdateWeapon(deltaTime);
 
             camera.Position = player.Position;
             camera.UpdateMatrices();
@@ -176,6 +222,52 @@ namespace Maze3D.Core
 
             // Discard vertical delta without applying it.
             mouseDeltaY = 0f;
+        }
+
+        /// <summary>
+        /// Called from JavaScript interop when the left mouse button is pressed
+        /// while the pointer is locked. Queues a shot request; the actual shot
+        /// (visual + sound) is applied in <see cref="UpdateWeapon"/>, subject to
+        /// the shot cooldown.
+        /// </summary>
+        public void RequestShoot()
+        {
+            shootRequested = true;
+        }
+
+        /// <summary>
+        /// Updates the first-person weapon shot animation/cooldown.
+        /// A queued left click starts a <see cref="ShotDuration"/>-long fire frame
+        /// and plays the shot sound, but only if the previous shot has finished.
+        /// </summary>
+        private void UpdateWeapon(float deltaTime)
+        {
+            if (shootRequested)
+            {
+                shootRequested = false;
+
+                if (shotTimer <= 0f)
+                {
+                    shotTimer = ShotDuration;
+
+                    try
+                    {
+                        if (shotSound != null)
+                            MediaPlayer.Play(shotSound);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error playing shot sound: {ex.Message}");
+                    }
+                }
+            }
+
+            if (shotTimer > 0f)
+            {
+                shotTimer -= deltaTime;
+                if (shotTimer < 0f)
+                    shotTimer = 0f;
+            }
         }
 
         private void HandleMovement(float deltaTime)
@@ -266,7 +358,28 @@ namespace Maze3D.Core
                     enemy.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Position);
             }
 
+            DrawFirstPersonWeapon();
+
             base.Draw(gameTime);
+        }
+
+        /// <summary>
+        /// Draws the fullscreen first-person weapon overlay on top of the 3D scene.
+        /// Shows the fire frame while <see cref="shotTimer"/> > 0, otherwise the
+        /// idle weapon. Transparent pixels are blended out so the scene shows through.
+        /// </summary>
+        private void DrawFirstPersonWeapon()
+        {
+            Texture2D current = shotTimer > 0f ? weaponShotTexture : weaponTexture;
+            if (current == null)
+                return;
+
+            Viewport viewport = GraphicsDevice.Viewport;
+            var destination = new Rectangle(0, 0, viewport.Width, viewport.Height);
+
+            spriteBatch.Begin();
+            spriteBatch.Draw(current, destination, Color.White);
+            spriteBatch.End();
         }
 
         /// <summary>

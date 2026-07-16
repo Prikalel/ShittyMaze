@@ -56,3 +56,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../wwwroot/Content/Textures/T_Enemy.png;Textures/T_Enemy.xnb
+
+#begin Textures/T_fullscreen_first_person_weapon.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_fullscreen_first_person_weapon.png;Textures/T_fullscreen_first_person_weapon.xnb
+
+#begin Textures/T_fullscreen_first_person_weapon_shot_frame_with_fire.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_fullscreen_first_person_weapon_shot_frame_with_fire.png;Textures/T_fullscreen_first_person_weapon_shot_frame_with_fire.xnb
+
+#begin Sounds/S_shot.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../wwwroot/Content/Sounds/S_shot.mp3;Sounds/S_shot.xnb

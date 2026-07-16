@@ -170,6 +170,16 @@
                 }
             });
 
+            // Forward left mouse button presses to .NET while the pointer is locked.
+            // (The first click just acquires the pointer lock; subsequent clicks fire.)
+            document.addEventListener('mousedown', (e) => {
+                if (e.button === 0 && document.pointerLockElement === canvas) {
+                    if (window.theInstance) {
+                        window.theInstance.invokeMethod('OnLeftMouseDown');
+                    }
+                }
+            });
+
             // Handle pointer lock change events
             document.addEventListener('pointerlockchange', () => {
                 if (document.pointerLockElement === canvas) {

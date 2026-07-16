@@ -48,5 +48,15 @@ namespace ShittyMaze.Web.Pages
         {
             _game?.ApplyMouseDelta(deltaX, deltaY);
         }
+
+        /// <summary>
+        /// Receives left mouse button presses from JavaScript while the pointer is
+        /// locked. Triggers the first-person weapon shot visual + sound.
+        /// </summary>
+        [JSInvokable]
+        public void OnLeftMouseDown()
+        {
+            _game?.RequestShoot();
+        }
     }
 }
