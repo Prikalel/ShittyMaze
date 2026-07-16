@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Input;
 using Maze3D.Entities;
 using Maze3D.Maze;
@@ -31,8 +32,8 @@ namespace Maze3D.Core
         private readonly List<Enemy> enemies = new List<Enemy>();
         private const int EnemyCount = 3;
 
-        private Song playerHitSound;
-        private Song enemyShotSound;
+        private SoundEffect playerHitSound;
+        private SoundEffect enemyShotSound;
         private readonly List<Projectile> bullets = new List<Projectile>();
         private BasicEffect bulletEffect;
 
@@ -50,7 +51,7 @@ namespace Maze3D.Core
         private SpriteBatch spriteBatch;
         private Texture2D weaponTexture;
         private Texture2D weaponShotTexture;
-        private Song shotSound;
+        private SoundEffect shotSound;
         private const float ShotDuration = 1.0f;
         private float shotTimer;
         private bool shootRequested;
@@ -150,7 +151,7 @@ namespace Maze3D.Core
 
             try
             {
-                playerHitSound = Content.Load<Song>("Sounds/S_player_got_shot");
+                playerHitSound = Content.Load<SoundEffect>("Sounds/S_player_got_shot");
             }
             catch (Exception ex)
             {
@@ -160,7 +161,7 @@ namespace Maze3D.Core
 
             try
             {
-                enemyShotSound = Content.Load<Song>("Sounds/S_enemy_shot");
+                enemyShotSound = Content.Load<SoundEffect>("Sounds/S_enemy_shot");
             }
             catch (Exception ex)
             {
@@ -202,7 +203,7 @@ namespace Maze3D.Core
 
             try
             {
-                shotSound = Content.Load<Song>("Sounds/S_shot");
+                shotSound = Content.Load<SoundEffect>("Sounds/S_shot");
             }
             catch (Exception ex)
             {
@@ -296,10 +297,7 @@ namespace Maze3D.Core
                     try
                     {
                         if (shotSound != null)
-                        {
-                            MediaPlayer.Volume = 1f; // Full volume (enemy shots fade it down).
-                            MediaPlayer.Play(shotSound);
-                        }
+                            shotSound.Play(1f, 0f, 0f); // One-shot; overlaps other sounds.
                     }
                     catch (Exception ex)
                     {
@@ -627,8 +625,8 @@ namespace Maze3D.Core
 
             try
             {
-                MediaPlayer.Volume = 1f; // Full volume (enemy shots fade it down).
-                MediaPlayer.Play(playerHitSound);
+                if (playerHitSound != null)
+                    playerHitSound.Play(1f, 0f, 0f); // One-shot; overlaps other sounds.
             }
             catch (Exception ex)
             {
@@ -656,8 +654,9 @@ namespace Maze3D.Core
 
             try
             {
-                MediaPlayer.Volume = volumePercent / 100f;
-                MediaPlayer.Play(enemyShotSound);
+                // One-shot instance with per-play volume; overlaps other sounds
+                // (no global MediaPlayer volume to leak).
+                enemyShotSound.Play(volumePercent / 100f, 0f, 0f);
             }
             catch (Exception ex)
             {
