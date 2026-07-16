@@ -104,3 +104,135 @@
 /importer:Mp3Importer
 /processor:SoundEffectProcessor
 /build:../wwwroot/Content/Sounds/S_enemy_shot.mp3;Sounds/S_enemy_shot.xnb
+
+#begin Textures/T_level2_wall.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level2_wall.jpg;Textures/T_level2_wall.xnb
+
+#begin Textures/T_level2_floor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level2_floor.jpg;Textures/T_level2_floor.xnb
+
+#begin Textures/T_level2_ceiling.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level2_ceiling.jpg;Textures/T_level2_ceiling.xnb
+
+#begin Textures/T_level3_wall.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level3_wall.jpg;Textures/T_level3_wall.xnb
+
+#begin Textures/T_level3_floor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level3_floor.jpg;Textures/T_level3_floor.xnb
+
+#begin Textures/T_level3_ceiling.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level3_ceiling.jpg;Textures/T_level3_ceiling.xnb
+
+#begin Textures/T_level4_wall.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level4_wall.jpg;Textures/T_level4_wall.xnb
+
+#begin Textures/T_level4_floor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level4_floor.jpg;Textures/T_level4_floor.xnb
+
+#begin Textures/T_level4_ceiling.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_level4_ceiling.jpg;Textures/T_level4_ceiling.xnb
+
+#begin Textures/T_1_hearts.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_1_hearts.png;Textures/T_1_hearts.xnb
+
+#begin Textures/T_2_hearts.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_2_hearts.png;Textures/T_2_hearts.xnb
+
+#begin Textures/T_3_hearts.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_3_hearts.png;Textures/T_3_hearts.xnb

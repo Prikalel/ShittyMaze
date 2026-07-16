@@ -42,6 +42,20 @@ namespace Maze3D.Core
         private const float BulletCollisionRadius = 0.1f;              // 3x smaller than player radius
         private const float ProjectileSize = 0.12f;                    // ~2-3x smaller than the goal cube (0.3)
 
+        // Level progression + lives (health).
+        private int levelNumber = 1;
+        private int lives = 3;
+        private const int MaxLives = 3;
+
+        // Maze texture sets: default (level 1) + alternate sets for levels 2-4.
+        private Texture2D defaultWallTexture;
+        private Texture2D defaultFloorTexture;
+        private Texture2D defaultCeilingTexture;
+        private readonly List<(Texture2D wall, Texture2D floor, Texture2D ceiling)> levelTextureSets = new List<(Texture2D wall, Texture2D floor, Texture2D ceiling)>();
+
+        // Hearts HUD overlay; index = lives - 1 (0..2).
+        private Texture2D[] heartsTextures;
+
         private bool contentLoaded = false;
 
         // First-person weapon overlay drawn fullscreen on top of the 3D scene.
@@ -118,17 +132,20 @@ namespace Maze3D.Core
 
             try
             {
-                var wallTexture = Content.Load<Texture2D>("Textures/T_Kirpich_7_BaseColor");
-                var floorTexture = Content.Load<Texture2D>("Textures/T_Wood_Floor_2_BaseColor");
-                var ceilingTexture = Content.Load<Texture2D>("Textures/T_Ceiling_Armstrong_1_BaseColor");
+                defaultWallTexture = Content.Load<Texture2D>("Textures/T_Kirpich_7_BaseColor");
+                defaultFloorTexture = Content.Load<Texture2D>("Textures/T_Wood_Floor_2_BaseColor");
+                defaultCeilingTexture = Content.Load<Texture2D>("Textures/T_Ceiling_Armstrong_1_BaseColor");
 
-                mazeRenderer.SetTextures(wallTexture, floorTexture, ceilingTexture);
+                mazeRenderer.SetTextures(defaultWallTexture, defaultFloorTexture, defaultCeilingTexture);
                 contentLoaded = true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading textures: {ex.Message}. Stack trace: {ex.StackTrace}");
             }
+
+            LoadLevelTextureSets();
+            LoadHeartsTextures();
 
             goalEffect = new BasicEffect(GraphicsDevice)
             {
@@ -414,6 +431,7 @@ namespace Maze3D.Core
             }
 
             DrawFirstPersonWeapon();
+            DrawHearts();
 
             base.Draw(gameTime);
         }
@@ -438,9 +456,57 @@ namespace Maze3D.Core
         }
 
         /// <summary>
-        /// Restarts the level by generating a new maze and resetting player position.
+        /// Draws the hearts HUD overlay: one texture per remaining life count.
+        /// </summary>
+        private void DrawHearts()
+        {
+            if (heartsTextures == null)
+                return;
+
+            int idx = lives - 1;
+            if (idx < 0 || idx >= heartsTextures.Length)
+                return;
+
+            Texture2D heart = heartsTextures[idx];
+            if (heart == null)
+                return;
+
+            Viewport viewport = GraphicsDevice.Viewport;
+            var destination = new Rectangle(0, 0, viewport.Width, viewport.Height);
+
+            spriteBatch.Begin();
+            spriteBatch.Draw(heart, destination, Color.White);
+            spriteBatch.End();
+        }
+
+        /// <summary>
+        /// Advances to the next level: a new maze is generated with the texture set
+        /// for the new level number. Lives are kept (they only reset on death).
         /// </summary>
         private void RestartLevel()
+        {
+            levelNumber++;
+            ApplyLevelTextures(levelNumber);
+            RegenerateMaze();
+        }
+
+        /// <summary>
+        /// Full reset after death: back to level 1 with the default textures and a
+        /// fresh set of lives.
+        /// </summary>
+        private void ResetOnDeath()
+        {
+            levelNumber = 1;
+            lives = MaxLives;
+            ApplyLevelTextures(levelNumber);
+            RegenerateMaze();
+        }
+
+        /// <summary>
+        /// Generates a fresh maze, repositions the goal/player/camera and respawns
+        /// enemies (which also clears active bullets).
+        /// </summary>
+        private void RegenerateMaze()
         {
             int[][] newGrid = MazeGenerator.Generate();
             mazeData.UpdateGrid(newGrid);
@@ -461,6 +527,66 @@ namespace Maze3D.Core
             camera.Reset();
 
             SpawnEnemies();
+        }
+
+        /// <summary>
+        /// Applies the maze texture set for the given level number. Level 1 uses the
+        /// default set; levels >= 2 cycle through the level 2/3/4 texture sets.
+        /// </summary>
+        /// <param name="level">Current level number (1-based).</param>
+        private void ApplyLevelTextures(int level)
+        {
+            if (level <= 1 || levelTextureSets.Count == 0)
+            {
+                mazeRenderer.SetTextures(defaultWallTexture, defaultFloorTexture, defaultCeilingTexture);
+                return;
+            }
+
+            int idx = (level - 2) % levelTextureSets.Count;
+            var set = levelTextureSets[idx];
+            mazeRenderer.SetTextures(set.wall, set.floor, set.ceiling);
+        }
+
+        /// <summary>
+        /// Loads the alternate maze texture sets for levels 2, 3 and 4. Best effort:
+        /// a failing set is skipped and ApplyLevelTextures falls back to default.
+        /// </summary>
+        private void LoadLevelTextureSets()
+        {
+            for (int lvl = 2; lvl <= 4; lvl++)
+            {
+                try
+                {
+                    var wall = Content.Load<Texture2D>($"Textures/T_level{lvl}_wall");
+                    var floor = Content.Load<Texture2D>($"Textures/T_level{lvl}_floor");
+                    var ceiling = Content.Load<Texture2D>($"Textures/T_level{lvl}_ceiling");
+                    levelTextureSets.Add((wall, floor, ceiling));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading level {lvl} textures: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Loads the hearts HUD overlays (T_1_hearts..T_3_hearts). Best effort.
+        /// </summary>
+        private void LoadHeartsTextures()
+        {
+            heartsTextures = new Texture2D[MaxLives];
+            for (int i = 0; i < MaxLives; i++)
+            {
+                try
+                {
+                    heartsTextures[i] = Content.Load<Texture2D>($"Textures/T_{i + 1}_hearts");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading hearts {i + 1} texture: {ex.Message}");
+                    heartsTextures[i] = null;
+                }
+            }
         }
 
         /// <summary>
@@ -604,6 +730,15 @@ namespace Maze3D.Core
                 {
                     PlayPlayerHitSound();
                     remove = true; // Despawn immediately on hit.
+
+                    lives--;
+                    if (lives <= 0)
+                    {
+                        // Out of lives: full reset to level 1.
+                        // RegenerateMaze() (inside) clears active bullets, so stop iterating.
+                        ResetOnDeath();
+                        return;
+                    }
                 }
                 else if (bullet.ReachedWall)
                 {
