@@ -39,9 +39,22 @@ namespace Maze3D.Core
         private float mouseDeltaX;
 
         /// <summary>
-        /// Accumulated mouse movement delta Y (vertical) to be applied to pitch.
+        /// Accumulated mouse movement delta Y (vertical). Currently unused because
+        /// the camera is locked to horizontal rotation only.
         /// </summary>
         private float mouseDeltaY;
+
+        /// <summary>
+        /// Whether continuous forward motion is active. Started by pressing W,
+        /// never auto-stopped (S only pauses while held).
+        /// </summary>
+        private bool isMoving;
+
+        /// <summary>
+        /// Keyboard state from the previous frame, used to detect key presses
+        /// (edge transitions) rather than held keys.
+        /// </summary>
+        private KeyboardState previousKeyboardState;
 
         public Game1(string baseUrl)
         {
@@ -131,41 +144,46 @@ namespace Maze3D.Core
 
         private void HandleMouseRotation()
         {
-            if (mouseDeltaX != 0f || mouseDeltaY != 0f)
+            // The camera can only rotate horizontally (yaw). Vertical mouse
+            // movement (pitch) is intentionally ignored.
+            if (mouseDeltaX != 0f)
             {
                 float deltaYaw = -mouseDeltaX * MouseSensitivity;
-                float deltaPitch = -mouseDeltaY * MouseSensitivity;
+                camera.ApplyRotation(deltaYaw, 0f);
 
-                camera.ApplyRotation(deltaYaw, deltaPitch);
-
-                // Reset deltas after applying
                 mouseDeltaX = 0f;
-                mouseDeltaY = 0f;
             }
+
+            // Discard vertical delta without applying it.
+            mouseDeltaY = 0f;
         }
 
         private void HandleMovement(float deltaTime)
         {
             var keyboardState = Keyboard.GetState();
 
-            Vector3 forward = camera.GetForwardDirection();
-            Vector3 right = camera.GetRightDirection();
-            Vector3 movement = Vector3.Zero;
+            // W starts continuous forward motion (detected on key press, not hold).
+            if (previousKeyboardState.IsKeyUp(Keys.W) && keyboardState.IsKeyDown(Keys.W))
+            {
+                isMoving = true;
+            }
 
-            if (keyboardState.IsKeyDown(Keys.W))
-                movement += forward;
-            if (keyboardState.IsKeyDown(Keys.S))
-                movement -= forward;
-            if (keyboardState.IsKeyDown(Keys.D))
-                movement += right;
-            if (keyboardState.IsKeyDown(Keys.A))
-                movement -= right;
+            // S, while held, temporarily halts the forward motion. Releasing S
+            // resumes it (the character "always moves forward" once started).
+            bool isStopped = keyboardState.IsKeyDown(Keys.S);
+
+            previousKeyboardState = keyboardState;
+
+            // Always move straight forward at the player's constant speed.
+            Vector3 movement = Vector3.Zero;
+            if (isMoving && !isStopped)
+            {
+                Vector3 forward = camera.GetForwardDirection();
+                movement = forward * player.Speed * deltaTime;
+            }
 
             if (movement.LengthSquared() > 0)
             {
-                movement.Normalize();
-                movement *= player.Speed * deltaTime;
-
                 Vector3 newPosition = player.Position + movement;
 
                 if (!collisionDetector.CheckCollision(newPosition))
@@ -174,6 +192,7 @@ namespace Maze3D.Core
                 }
                 else
                 {
+                    // Slide along walls when the direct path is blocked.
                     Vector3 xMove = new Vector3(movement.X, 0, 0);
                     Vector3 zMove = new Vector3(0, 0, movement.Z);
 
@@ -232,6 +251,10 @@ namespace Maze3D.Core
 
             Vector3 startPos = mazeData.GetStartPosition();
             player.Position = new Vector3(startPos.X, 0.7f, startPos.Z);
+
+            // Stop auto-forward so the player starts each maze stationary.
+            isMoving = false;
+            previousKeyboardState = Keyboard.GetState();
 
             camera.Position = player.Position;
             camera.Reset();
