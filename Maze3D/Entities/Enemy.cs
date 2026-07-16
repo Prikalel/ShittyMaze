@@ -5,50 +5,102 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Maze3D.Entities
 {
     /// <summary>
-    /// A stationary enemy rendered as a camera-facing billboard (sprite).
+    /// A camera-facing billboard enemy that patrols back and forth along a fixed,
+    /// straight corridor path and can shoot the player when it has line of sight.
     ///
     /// The mesh is a single vertical quad (2 triangles / 4 vertices) which, every
     /// frame, is rotated about the Y axis so its front face points at the camera.
     /// This keeps the textured picture fully visible from the player's eye.
     ///
-    /// Notes on rendering:
+    /// Movement: once spawned the enemy owns an immutable straight path (two world
+    /// endpoints). It walks from one end to the other and back forever, ignoring
+    /// walls, the player, the goal and other enemies by design. Shooting does not
+    /// affect its movement speed.
+    ///
+    /// Shooting: when the game logic (Game1) decides the enemy fires, it calls
+    /// <see cref="TriggerShotSprite"/> + <see cref="ResetShootCooldown"/>. The shot
+    /// sprite is shown for <see cref="ShotSpriteDuration"/> seconds before reverting
+    /// to the default sprite; the shot cooldown (>= 3s) gates further shots.
+    ///
+    /// Rendering notes:
     ///  - Lighting is disabled everywhere in this project, so vertex normals are
     ///    irrelevant. Visibility is governed purely by triangle winding + cull mode.
     ///  - The quad is wound CLOCKWISE as seen from its +Z face (the side that ends
-    ///    up pointing at the camera), which makes the textured face survive the
-    ///    project's CullCounterClockwiseFace rasterizer.
-    ///  - In addition the enemy is drawn with CullMode.None + AlphaBlend so the
-    ///    textured face is always shown and transparent pixels are cut out.
+    ///    up pointing at the camera), so the textured face survives the project's
+    ///    CullCounterClockwiseFace rasterizer.
+    ///  - The enemy is drawn with CullMode.None + AlphaBlend so the textured face
+    ///    is always shown and transparent pixels are cut out (both sprites).
     /// </summary>
     public class Enemy
     {
         private readonly GraphicsDevice graphicsDevice;
         private readonly BasicEffect effect;
-        private readonly Texture2D texture;
+        private readonly Texture2D texture;       // Default sprite.
+        private readonly Texture2D shotTexture;   // Sprite shown while firing.
 
         private readonly VertexPositionTexture[] vertices;
         private readonly short[] indices;
 
-        private readonly Vector3 position;
         private readonly float size;
 
+        // Patrol path (a straight corridor). The enemy ping-pongs between the ends.
+        private readonly Vector3 pathStart;
+        private readonly Vector3 pathEnd;
+        private Vector3 currentTarget;
+
+        // Current world position (moves along the path every frame).
+        private Vector3 position;
+
+        // Shooting state.
+        private float shootCooldown;   // Time left before the enemy can fire again.
+        private float shotSpriteTimer; // Time left the shot sprite stays visible.
+
         /// <summary>
-        /// Creates a billboard enemy.
+        /// Minimum time (seconds) between two shots from the same enemy.
+        /// </summary>
+        public const float ShotCooldownDuration = 3.0f;
+
+        /// <summary>
+        /// How long (seconds) the shot sprite is shown after firing.
+        /// </summary>
+        public const float ShotSpriteDuration = 0.5f;
+
+        /// <summary>
+        /// Enemy movement speed in world units per second.
+        /// Half of the player's normal speed (see <see cref="Player.DefaultSpeed"/>).
+        /// </summary>
+        public const float MoveSpeed = Player.DefaultSpeed / 2f;
+
+        /// <summary>Current world position of the enemy.</summary>
+        public Vector3 Position => position;
+
+        /// <summary>True when the shot cooldown has elapsed and the enemy may fire.</summary>
+        public bool CanShoot => shootCooldown <= 0f;
+
+        /// <summary>
+        /// Creates a billboard enemy that patrols along a straight segment.
         /// </summary>
         /// <param name="graphicsDevice">Graphics device used for drawing.</param>
-        /// <param name="texture">Enemy sprite texture (supports transparency).</param>
-        /// <param name="position">
-        /// World position (an XZ cell center). Only X/Z are used; the quad is always
-        /// grounded on the floor so its base sits at Y = 0.
+        /// <param name="texture">Default enemy sprite texture (supports transparency).</param>
+        /// <param name="shotTexture">Sprite shown for <see cref="ShotSpriteDuration"/> after firing.</param>
+        /// <param name="spawnPosition">
+        /// World position where the enemy starts and which is one end of its path.
+        /// Only X/Z are used; the quad is always grounded on the floor (Y = 0).
         /// </param>
+        /// <param name="pathEndPosition">World position of the other end of the patrol path.</param>
         /// <param name="size">Quad width and height in world units.</param>
-        public Enemy(GraphicsDevice graphicsDevice, Texture2D texture, Vector3 position, float size)
+        public Enemy(GraphicsDevice graphicsDevice, Texture2D texture, Texture2D shotTexture, Vector3 spawnPosition, Vector3 pathEndPosition, float size)
         {
             this.graphicsDevice = graphicsDevice;
             this.texture = texture;
-            // Ground to floor: ignore any incoming Y, base at Y = 0.
-            this.position = new Vector3(position.X, 0f, position.Z);
+            this.shotTexture = shotTexture;
             this.size = size;
+
+            // Ground to floor: ignore any incoming Y, base at Y = 0.
+            this.position = new Vector3(spawnPosition.X, 0f, spawnPosition.Z);
+            this.pathStart = this.position;
+            this.pathEnd = new Vector3(pathEndPosition.X, 0f, pathEndPosition.Z);
+            this.currentTarget = this.pathEnd;
 
             effect = new BasicEffect(graphicsDevice)
             {
@@ -99,11 +151,68 @@ namespace Maze3D.Entities
         }
 
         /// <summary>
-        /// No behaviour yet — enemies just stand still. Kept for future use
-        /// (movement, animation, AI, etc.).
+        /// Per-frame update: patrol movement, shot cooldown and shot-sprite revert.
+        /// Movement and shooting are independent, so firing never slows the enemy.
         /// </summary>
         public void Update(GameTime gameTime)
         {
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            // --- Patrol movement ---
+            Vector3 toTarget = currentTarget - position;
+            toTarget.Y = 0f;
+            float distance = toTarget.Length();
+
+            if (distance > 1e-5f)
+            {
+                float step = MoveSpeed * dt;
+                if (step >= distance)
+                {
+                    position = currentTarget;
+                    currentTarget = (currentTarget == pathEnd) ? pathStart : pathEnd;
+                }
+                else
+                {
+                    position += toTarget * (step / distance);
+                }
+            }
+
+            // --- Shot cooldown (does not block movement) ---
+            if (shootCooldown > 0f)
+            {
+                shootCooldown -= dt;
+                if (shootCooldown < 0f)
+                    shootCooldown = 0f;
+            }
+
+            // --- Shot sprite revert ---
+            if (shotSpriteTimer > 0f)
+            {
+                shotSpriteTimer -= dt;
+                if (shotSpriteTimer <= 0f)
+                {
+                    shotSpriteTimer = 0f;
+                    effect.Texture = texture; // Revert to the default sprite.
+                }
+            }
+        }
+
+        /// <summary>
+        /// Shows the shot sprite for <see cref="ShotSpriteDuration"/> seconds.
+        /// </summary>
+        public void TriggerShotSprite()
+        {
+            shotSpriteTimer = ShotSpriteDuration;
+            if (shotTexture != null)
+                effect.Texture = shotTexture;
+        }
+
+        /// <summary>
+        /// Resets the shot cooldown so the enemy must wait before firing again.
+        /// </summary>
+        public void ResetShootCooldown()
+        {
+            shootCooldown = ShotCooldownDuration;
         }
 
         /// <summary>

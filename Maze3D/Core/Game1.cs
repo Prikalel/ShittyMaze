@@ -27,8 +27,18 @@ namespace Maze3D.Core
         private BasicEffect goalEffect;
 
         private Texture2D enemyTexture;
+        private Texture2D enemyShotTexture;
         private readonly List<Enemy> enemies = new List<Enemy>();
         private const int EnemyCount = 3;
+
+        private Song playerHitSound;
+        private readonly List<Projectile> bullets = new List<Projectile>();
+        private BasicEffect bulletEffect;
+
+        // Enemy projectile tuning.
+        private const float ProjectileSpeed = Player.DefaultSpeed * 2f; // 2x player speed
+        private const float BulletCollisionRadius = 0.1f;              // 3x smaller than player radius
+        private const float ProjectileSize = 0.12f;                    // ~2-3x smaller than the goal cube (0.3)
 
         private bool contentLoaded = false;
 
@@ -128,14 +138,33 @@ namespace Maze3D.Core
             try
             {
                 enemyTexture = Content.Load<Texture2D>("Textures/T_Enemy");
+                enemyShotTexture = Content.Load<Texture2D>("Textures/T_Enemy_shot_sprite");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading enemy texture: {ex.Message}");
+                Console.WriteLine($"Error loading enemy textures: {ex.Message}");
                 enemyTexture = null;
+                enemyShotTexture = null;
             }
 
-            // Spawn enemies for the first maze now that the texture is available.
+            try
+            {
+                playerHitSound = Content.Load<Song>("Sounds/S_player_got_shot");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading player hit sound: {ex.Message}");
+                playerHitSound = null;
+            }
+
+            bulletEffect = new BasicEffect(GraphicsDevice)
+            {
+                VertexColorEnabled = true,
+                LightingEnabled = false,
+                TextureEnabled = false
+            };
+
+            // Spawn enemies for the first maze now that the textures are available.
             SpawnEnemies();
 
             LoadFirstPersonWeapon();
@@ -187,6 +216,9 @@ namespace Maze3D.Core
             goalObject?.Update(gameTime);
             foreach (Enemy enemy in enemies)
                 enemy.Update(gameTime);
+
+            UpdateEnemyShooting();
+            UpdateBullets(deltaTime);
 
             if (goalObject != null && goalObject.CheckCollision(player.Position))
             {
@@ -345,6 +377,17 @@ namespace Maze3D.Core
             mazeRenderer.Draw(camera.ViewMatrix, camera.ProjectionMatrix);
             goalObject?.Draw(goalEffect, camera.ViewMatrix, camera.ProjectionMatrix);
 
+            // Projectiles (opaque gray cubes) drawn with depth, before the
+            // alpha-blended enemies.
+            if (bullets.Count > 0)
+            {
+                GraphicsDevice.BlendState = BlendState.Opaque;
+                GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+                foreach (Projectile bullet in bullets)
+                    bullet.Draw(bulletEffect, camera.ViewMatrix, camera.ProjectionMatrix);
+            }
+
             // Enemies are transparent billboards: alpha-blend so transparent pixels
             // are cut out, and disable back-face culling so the textured face is
             // always visible regardless of winding/platform cull conventions.
@@ -418,6 +461,7 @@ namespace Maze3D.Core
         private void SpawnEnemies()
         {
             enemies.Clear();
+            bullets.Clear();
             if (enemyTexture == null)
                 return;
 
@@ -444,22 +488,132 @@ namespace Maze3D.Core
                 }
             }
 
+            var rng = new Random();
+
+            // Creates an enemy at the given open cell and assigns it a straight
+            // patrol path that begins at that cell (chosen at spawn, never changes).
+            void SpawnAt(int cellIndex)
+            {
+                var (cx, cz) = openCells[cellIndex];
+                Vector3 spawnWorld = mazeData.GridToWorld(cx, cz);
+                var (fx, fz) = mazeData.GetStraightPathEnd(cx, cz, rng);
+                Vector3 pathEndWorld = mazeData.GridToWorld(fx, fz);
+                enemies.Add(new Enemy(GraphicsDevice, enemyTexture, enemyShotTexture, spawnWorld, pathEndWorld, enemySize));
+            }
+
             var used = new HashSet<int> { nearestIndex };
-            Vector3 nearestPos = mazeData.GridToWorld(openCells[nearestIndex].x, openCells[nearestIndex].z);
-            enemies.Add(new Enemy(GraphicsDevice, enemyTexture, nearestPos, enemySize));
+            SpawnAt(nearestIndex);
 
             // Remaining enemies: random distinct open cells.
-            var rng = new Random();
             int remaining = EnemyCount - 1;
             while (remaining > 0 && used.Count < openCells.Count)
             {
                 int idx = rng.Next(openCells.Count);
                 if (used.Add(idx))
                 {
-                    Vector3 w = mazeData.GridToWorld(openCells[idx].x, openCells[idx].z);
-                    enemies.Add(new Enemy(GraphicsDevice, enemyTexture, w, enemySize));
+                    SpawnAt(idx);
                     remaining--;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Each enemy with line of sight to the player and an elapsed shot cooldown
+        /// fires a projectile toward the player's exact world position (captured at
+        /// the moment of firing), then enters its shot cooldown and shows the shot
+        /// sprite. Shooting never slows the enemy down.
+        /// </summary>
+        private void UpdateEnemyShooting()
+        {
+            Vector3 playerPos = player.Position;
+
+            foreach (Enemy enemy in enemies)
+            {
+                if (!enemy.CanShoot)
+                    continue;
+
+                // Line of sight between the enemy's cell and the player's cell.
+                var (ex, ez) = mazeData.WorldToGrid(enemy.Position);
+                var (px, pz) = mazeData.WorldToGrid(playerPos);
+                Vector3 fromCell = mazeData.GridToWorld(ex, ez);
+                Vector3 toCell = mazeData.GridToWorld(px, pz);
+                if (!mazeData.HasLineOfSight(fromCell, toCell))
+                    continue;
+
+                // Fire toward the player's exact captured position.
+                Vector3 target = playerPos;
+                enemy.TriggerShotSprite();
+                enemy.ResetShootCooldown();
+
+                Vector3 spawn = new Vector3(enemy.Position.X, target.Y, enemy.Position.Z);
+                Vector3 dir = new Vector3(target.X - spawn.X, 0f, target.Z - spawn.Z);
+                if (dir.LengthSquared() < 1e-6f)
+                    continue;
+                dir.Normalize();
+
+                // Precompute the despawn point: first wall along the travel direction.
+                Vector3 despawn = mazeData.GetRayWallHit(spawn, dir);
+                float despawnDist = Vector2.Distance(
+                    new Vector2(spawn.X, spawn.Z),
+                    new Vector2(despawn.X, despawn.Z));
+
+                bullets.Add(new Projectile(GraphicsDevice, spawn, dir, ProjectileSpeed, despawnDist, ProjectileSize));
+            }
+        }
+
+        /// <summary>
+        /// Moves every active projectile, then removes those that hit the player
+        /// (playing the hit sound) or reached their precomputed wall despawn point.
+        /// </summary>
+        private void UpdateBullets(float deltaTime)
+        {
+            if (bullets.Count == 0)
+                return;
+
+            Vector3 playerPos = player.Position;
+            float hitRadius = BulletCollisionRadius + CollisionDetector.DefaultPlayerRadius;
+            float hitRadiusSq = hitRadius * hitRadius;
+
+            for (int i = bullets.Count - 1; i >= 0; i--)
+            {
+                Projectile bullet = bullets[i];
+                bullet.Update(deltaTime);
+
+                bool remove = false;
+
+                // 2D (XZ) overlap between bullet and player collision radii.
+                float dx = bullet.Position.X - playerPos.X;
+                float dz = bullet.Position.Z - playerPos.Z;
+                if (dx * dx + dz * dz <= hitRadiusSq)
+                {
+                    PlayPlayerHitSound();
+                    remove = true; // Despawn immediately on hit.
+                }
+                else if (bullet.ReachedWall)
+                {
+                    remove = true;
+                }
+
+                if (remove)
+                    bullets.RemoveAt(i);
+            }
+        }
+
+        /// <summary>
+        /// Plays the "player got shot" sound (best effort).
+        /// </summary>
+        private void PlayPlayerHitSound()
+        {
+            if (playerHitSound == null)
+                return;
+
+            try
+            {
+                MediaPlayer.Play(playerHitSound);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error playing player hit sound: {ex.Message}");
             }
         }
     }
