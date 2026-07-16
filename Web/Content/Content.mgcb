@@ -45,3 +45,14 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../wwwroot/Content/Textures/T_Ceiling_Armstrong_1_BaseColor.jpg;Textures/T_Ceiling_Armstrong_1_BaseColor.xnb
+
+#begin Textures/T_Enemy.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../wwwroot/Content/Textures/T_Enemy.png;Textures/T_Enemy.xnb

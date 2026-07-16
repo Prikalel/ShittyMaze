@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
 namespace Maze3D.Maze
@@ -98,6 +99,22 @@ namespace Maze3D.Maze
         public Vector3 GetFinishPosition()
         {
             return FindCellPosition(3) ?? GridToWorld(width - 2, height - 2);
+        }
+
+        /// <summary>
+        /// Returns all open-path cells (grid value 0) as grid coordinates.
+        /// Start (value 2) and finish (value 3) cells are NOT included, so a caller
+        /// can safely use these positions for enemy placement.
+        /// </summary>
+        /// <returns>List of (x, z) grid coordinates of every open path cell.</returns>
+        public List<(int x, int z)> GetOpenCells()
+        {
+            var cells = new List<(int x, int z)>();
+            for (int z = 0; z < height; z++)
+                for (int x = 0; x < width; x++)
+                    if (grid[z, x] == 0)
+                        cells.Add((x, z));
+            return cells;
         }
 
         /// <summary>

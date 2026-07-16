@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -23,6 +24,10 @@ namespace Maze3D.Core
         private CollisionDetector collisionDetector;
         private GoalObject goalObject;
         private BasicEffect goalEffect;
+
+        private Texture2D enemyTexture;
+        private readonly List<Enemy> enemies = new List<Enemy>();
+        private const int EnemyCount = 3;
 
         private bool contentLoaded = false;
 
@@ -106,6 +111,19 @@ namespace Maze3D.Core
                 LightingEnabled = false,
                 TextureEnabled = false
             };
+
+            try
+            {
+                enemyTexture = Content.Load<Texture2D>("Textures/T_Enemy");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading enemy texture: {ex.Message}");
+                enemyTexture = null;
+            }
+
+            // Spawn enemies for the first maze now that the texture is available.
+            SpawnEnemies();
         }
 
         protected override void Update(GameTime gameTime)
@@ -121,6 +139,8 @@ namespace Maze3D.Core
             camera.Position = player.Position;
             camera.UpdateMatrices();
             goalObject?.Update(gameTime);
+            foreach (Enemy enemy in enemies)
+                enemy.Update(gameTime);
 
             if (goalObject != null && goalObject.CheckCollision(player.Position))
             {
@@ -233,6 +253,19 @@ namespace Maze3D.Core
             mazeRenderer.Draw(camera.ViewMatrix, camera.ProjectionMatrix);
             goalObject?.Draw(goalEffect, camera.ViewMatrix, camera.ProjectionMatrix);
 
+            // Enemies are transparent billboards: alpha-blend so transparent pixels
+            // are cut out, and disable back-face culling so the textured face is
+            // always visible regardless of winding/platform cull conventions.
+            if (enemies.Count > 0)
+            {
+                GraphicsDevice.BlendState = BlendState.AlphaBlend;
+                GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+
+                foreach (Enemy enemy in enemies)
+                    enemy.Draw(camera.ViewMatrix, camera.ProjectionMatrix, camera.Position);
+            }
+
             base.Draw(gameTime);
         }
 
@@ -258,6 +291,63 @@ namespace Maze3D.Core
 
             camera.Position = player.Position;
             camera.Reset();
+
+            SpawnEnemies();
+        }
+
+        /// <summary>
+        /// (Re)spawns the enemies for the current maze.
+        /// One enemy is always placed in the open cell nearest to the player spawn
+        /// (handy for debugging the billboard render). The rest go in random open
+        /// cells. Open cells exclude the player start (value 2) and the finish
+        /// (value 3), so enemies never overlap the spawn or the goal cube.
+        /// </summary>
+        private void SpawnEnemies()
+        {
+            enemies.Clear();
+            if (enemyTexture == null)
+                return;
+
+            List<(int x, int z)> openCells = mazeData.GetOpenCells();
+            if (openCells.Count == 0)
+                return;
+
+            Vector3 playerStart = mazeData.GetStartPosition();
+            float enemySize = 0.8f * mazeData.CellSize; // 0.8 of a cell, sprite is square
+
+            // Debug enemy: nearest open cell to the player spawn.
+            int nearestIndex = 0;
+            float nearestDistSq = float.MaxValue;
+            for (int i = 0; i < openCells.Count; i++)
+            {
+                Vector3 w = mazeData.GridToWorld(openCells[i].x, openCells[i].z);
+                float dx = w.X - playerStart.X;
+                float dz = w.Z - playerStart.Z;
+                float distSq = dx * dx + dz * dz;
+                if (distSq < nearestDistSq)
+                {
+                    nearestDistSq = distSq;
+                    nearestIndex = i;
+                }
+            }
+
+            var used = new HashSet<int> { nearestIndex };
+            Vector3 nearestPos = mazeData.GridToWorld(openCells[nearestIndex].x, openCells[nearestIndex].z);
+            enemies.Add(new Enemy(GraphicsDevice, enemyTexture, nearestPos, enemySize));
+
+            // Remaining enemies: random distinct open cells.
+            var rng = new Random();
+            int remaining = EnemyCount - 1;
+            while (remaining > 0 && used.Count < openCells.Count)
+            {
+                int idx = rng.Next(openCells.Count);
+                if (used.Add(idx))
+                {
+                    Vector3 w = mazeData.GridToWorld(openCells[idx].x, openCells[idx].z);
+                    enemies.Add(new Enemy(GraphicsDevice, enemyTexture, w, enemySize));
+                    remaining--;
+                }
+            }
         }
     }
 }
