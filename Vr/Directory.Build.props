@@ -1,0 +1,8 @@
+<Project>
+
+  <PropertyGroup>
+    <AndroidSdkDirectory>d:\android-sdk</AndroidSdkDirectory>
+    <JavaSdkDirectory>d:\jdk</JavaSdkDirectory>
+  </PropertyGroup>
+
+</Project>

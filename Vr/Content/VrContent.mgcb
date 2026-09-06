@@ -1,0 +1,333 @@
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:bin/Android
+/intermediateDir:obj/Android
+/platform:Android
+/config:
+/profile:Reach
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+
+#---------------------------------- Content ---------------------------------#
+
+# Maze textures (default set + level 2-4 sets + random floors for level 5+).
+# Source files come from the Web project's content folder (read-only reuse);
+# hearts and 2D first-person-weapon overlays are deliberately NOT included
+# (the VR port shows HP as weapon tint and uses the 3D TT-33 model).
+
+#begin Textures/T_Kirpich_7_BaseColor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_Kirpich_7_BaseColor.jpg;Textures/T_Kirpich_7_BaseColor.xnb
+
+#begin Textures/T_Wood_Floor_2_BaseColor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_Wood_Floor_2_BaseColor.jpg;Textures/T_Wood_Floor_2_BaseColor.xnb
+
+#begin Textures/T_Ceiling_Armstrong_1_BaseColor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_Ceiling_Armstrong_1_BaseColor.jpg;Textures/T_Ceiling_Armstrong_1_BaseColor.xnb
+
+#begin Textures/T_level2_wall.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level2_wall.jpg;Textures/T_level2_wall.xnb
+
+#begin Textures/T_level2_floor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level2_floor.jpg;Textures/T_level2_floor.xnb
+
+#begin Textures/T_level2_ceiling.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level2_ceiling.jpg;Textures/T_level2_ceiling.xnb
+
+#begin Textures/T_level3_wall.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level3_wall.jpg;Textures/T_level3_wall.xnb
+
+#begin Textures/T_level3_floor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level3_floor.jpg;Textures/T_level3_floor.xnb
+
+#begin Textures/T_level3_ceiling.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level3_ceiling.jpg;Textures/T_level3_ceiling.xnb
+
+#begin Textures/T_level4_wall.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level4_wall.jpg;Textures/T_level4_wall.xnb
+
+#begin Textures/T_level4_floor.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level4_floor.jpg;Textures/T_level4_floor.xnb
+
+#begin Textures/T_level4_ceiling.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_level4_ceiling.jpg;Textures/T_level4_ceiling.xnb
+
+#begin Textures/T_random_floor1.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor1.jpg;Textures/T_random_floor1.xnb
+
+#begin Textures/T_random_floor2.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor2.jpg;Textures/T_random_floor2.xnb
+
+#begin Textures/T_random_floor3.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor3.jpg;Textures/T_random_floor3.xnb
+
+#begin Textures/T_random_floor4.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor4.jpg;Textures/T_random_floor4.xnb
+
+#begin Textures/T_random_floor5.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor5.jpg;Textures/T_random_floor5.xnb
+
+#begin Textures/T_random_floor6.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor6.jpg;Textures/T_random_floor6.xnb
+
+#begin Textures/T_random_floor7.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor7.jpg;Textures/T_random_floor7.xnb
+
+#begin Textures/T_random_floor8.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor8.jpg;Textures/T_random_floor8.xnb
+
+#begin Textures/T_random_floor9.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_random_floor9.jpg;Textures/T_random_floor9.xnb
+
+# Enemy sprites.
+
+#begin Textures/T_Enemy.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_Enemy.png;Textures/T_Enemy.xnb
+
+#begin Textures/T_Enemy_shot_sprite.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Textures/T_Enemy_shot_sprite.png;Textures/T_Enemy_shot_sprite.xnb
+
+# Sounds (SoundEffects).
+
+#begin Sounds/S_shot.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_shot.mp3;Sounds/S_shot.xnb
+
+#begin Sounds/S_player_got_shot.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_player_got_shot.mp3;Sounds/S_player_got_shot.xnb
+
+#begin Sounds/S_enemy_shot.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_enemy_shot.mp3;Sounds/S_enemy_shot.xnb
+
+#begin Sounds/S_enemy_got_shot.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_enemy_got_shot.mp3;Sounds/S_enemy_got_shot.xnb
+
+#begin Sounds/S_enemy_dead.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_enemy_dead.mp3;Sounds/S_enemy_dead.xnb
+
+# Background themes (Songs) - one per level (1..4). RISK: MP3/Song on Android
+# is unproven; if the build or on-device playback fails, re-encode to WAV/OGG
+# copies and reference them here (do not overwrite the Web sources).
+
+#begin Sounds/S_main_theme1.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_main_theme1.mp3;Sounds/S_main_theme1.xnb
+
+#begin Sounds/S_main_theme2.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_main_theme2.mp3;Sounds/S_main_theme2.xnb
+
+#begin Sounds/S_main_theme3.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_main_theme3.mp3;Sounds/S_main_theme3.xnb
+
+#begin Sounds/S_main_theme4.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/build:../../Web/wwwroot/Content/Sounds/S_main_theme4.mp3;Sounds/S_main_theme4.xnb
+
+# HUD font (used for the fading "Level N" billboard).
+
+#begin Fonts/Hud.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:TextureFormat=Color
+/build:../../Web/wwwroot/Content/Fonts/Hud.spritefont;Fonts/Hud.xnb

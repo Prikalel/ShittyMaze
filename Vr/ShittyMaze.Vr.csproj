@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>29.0</SupportedOSPlatformVersion>
+    <ProjectGuid>{7E51A9C2-3F4B-4D6E-9A81-52C0FA9E4B17</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <IsTrimmable>True</IsTrimmable>
+    <TrimMode>partial</TrimMode>
+    <AndroidEnableMarshalMethods>false</AndroidEnableMarshalMethods>
+    <RootNamespace>ShittyMaze.Vr</RootNamespace>
+    <AssemblyName>ShittyMaze.Vr</AssemblyName>
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <DefineConstants>$(DefineConstants);ANDROID</DefineConstants>
+    <KniPlatform>Android</KniPlatform>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <ApplicationId>ShittyMaze.ShittyMazeVR</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <!-- Keep Song (.mp3) assets uncompressed so Android MediaPlayer can OpenFd them. -->
+    <AndroidStoreUncompressedFileExtensions>.m4a;.mp3</AndroidStoreUncompressedFileExtensions>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reference KNI from source (branch pico-openxr-fix) instead of NuGet packages.
+         Paths go up from ShittyMaze/Vr/ to the workspace root, mirroring ShittyMazeVr.csproj. -->
+    <ProjectReference Include="..\..\kni\src\Xna.Framework\Xna.Framework.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Content\Xna.Framework.Content.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Graphics\Xna.Framework.Graphics.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Audio\Xna.Framework.Audio.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Media\Xna.Framework.Media.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Input\Xna.Framework.Input.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Game\Xna.Framework.Game.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Devices\Xna.Framework.Devices.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.Storage\Xna.Framework.Storage.csproj" />
+    <ProjectReference Include="..\..\kni\src\Xna.Framework.XR\Xna.Framework.XR.csproj" />
+    <!-- Contains the Pico OpenXR compatibility patch (Kni.Platform.dll). -->
+    <ProjectReference Include="..\..\kni\Platforms\Kni.Platform.Oculus.GL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Kept as NuGet package: kni has no source project for the MSBuild Builder
+         (only the MGCB command-line tool). ExcludeAssets="compile;runtime" keeps
+         its build targets (KniContentReference/mgcb) while preventing its lib and
+         transitive nkast.Xna.Framework.* package assemblies from conflicting with
+         the project references above. -->
+    <PackageReference Include="nkast.Xna.Framework.Content.Pipeline.Builder" Version="4.3.9001" ExcludeAssets="compile;runtime" />
+    <!-- Maze generation library used by the source-included Maze3D code (netstandard2.0, no XNA deps). -->
+    <PackageReference Include="Labyrinthian" Version="1.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- VR-specific sources. -->
+    <Compile Include="src\**\*.cs" />
+    <!-- The Maze3D game library is compiled from source against the source-built KNI
+         assemblies (a ProjectReference would drag the conflicting nkast.* 4.2 nuget
+         assemblies from Maze3D.csproj into the APK). Maze3D/Web stay untouched. -->
+    <Compile Include="..\Maze3D\**\*.cs" Exclude="..\Maze3D\obj\**\*.cs;..\Maze3D\bin\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="AndroidManifest.xml" />
+    <AndroidResource Include="Resources\Drawable\Icon.png" />
+    <AndroidResource Include="Resources\Drawable\Splash.png" />
+    <AndroidResource Include="Resources\Values\Strings.xml" />
+    <AndroidResource Include="Resources\Values\Styles.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ContentFolder=Content makes the built .xnb files land in the APK under
+         assets/Content/... so Content.RootDirectory = "Content" resolves them. -->
+    <KniContentReference Include="Content\VrContent.mgcb" ContentFolder="Content" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Raw TT-33 weapon model shipped as AndroidAssets (read at runtime by the
+         custom glTF loader through TitleContainer). -->
+    <AndroidAsset Include="..\new-assets\tt_33\scene.gltf" Link="Assets\tt_33\scene.gltf" />
+    <AndroidAsset Include="..\new-assets\tt_33\scene.bin" Link="Assets\tt_33\scene.bin" />
+    <AndroidAsset Include="..\new-assets\tt_33\textures\tt-33_baseColor.png" Link="Assets\tt_33\textures\tt-33_baseColor.png" />
+  </ItemGroup>
+
+</Project>

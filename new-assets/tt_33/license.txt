@@ -1,0 +1,11 @@
+Model Information:
+* title:	TT_33
+* source:	https://sketchfab.com/3d-models/tt-33-efdf8e2450544a57835967aafb8358fe
+* author:	Dmitriy Poskrebyshev (https://sketchfab.com/dr.makakyc)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "TT_33" (https://sketchfab.com/3d-models/tt-33-efdf8e2450544a57835967aafb8358fe) by Dmitriy Poskrebyshev (https://sketchfab.com/dr.makakyc) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

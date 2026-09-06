@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShittyMaze.Web", "Web\Shitt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maze3D", "Maze3D\Maze3D.csproj", "{BCB3B979-CBAD-4ACE-A699-172BCDBB7212}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShittyMaze.Vr", "Vr\ShittyMaze.Vr.csproj", "{7E51A9C2-3F4B-4D6E-9A81-52C0FA9E4B17}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{BCB3B979-CBAD-4ACE-A699-172BCDBB7212}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCB3B979-CBAD-4ACE-A699-172BCDBB7212}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCB3B979-CBAD-4ACE-A699-172BCDBB7212}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E51A9C2-3F4B-4D6E-9A81-52C0FA9E4B17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E51A9C2-3F4B-4D6E-9A81-52C0FA9E4B17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E51A9C2-3F4B-4D6E-9A81-52C0FA9E4B17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E51A9C2-3F4B-4D6E-9A81-52C0FA9E4B17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
