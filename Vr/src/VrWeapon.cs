@@ -84,14 +84,18 @@ namespace ShittyMaze.Vr
         {
             // Heuristic: an all-zero grip pose means the controller is not
             // tracked (KNI reports identity poses then) - hide the weapon.
+            // KNI's never-updated HandsState default has Orientation W=0
+            // (default quaternion, not Identity); a real pose never has W=0,
+            // so treat that as untracked too.
             bool zeroPose = hands.RGripPose.Translation == Vector3.Zero
                 && hands.RGripPose.Orientation == Quaternion.Identity;
-            if (zeroPose != !tracked)
+            bool trackedNow = !zeroPose && hands.RGripPose.Orientation.W != 0f;
+            if (trackedNow != tracked)
             {
-                tracked = !zeroPose;
+                tracked = trackedNow;
                 Console.WriteLine($"[VrWeapon] Right grip pose tracking: {tracked}");
             }
-            if (zeroPose)
+            if (!trackedNow)
                 return;
 
             // Hand pose relative to the real head, re-based onto the virtual

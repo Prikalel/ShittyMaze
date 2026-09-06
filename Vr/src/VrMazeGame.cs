@@ -47,6 +47,7 @@ namespace ShittyMaze.Vr
         private readonly XrInput input = new XrInput();
         private VrWeapon weapon;
         private LevelBanner banner;
+        private VrDebugHud debugHud;
 
         // Reused game state (ported from Game1).
         private Player player;
@@ -234,6 +235,17 @@ namespace ShittyMaze.Vr
             banner = new LevelBanner(GraphicsDevice, hudFont);
             banner.Show($"Level {levelNumber}");
 
+            // Removable on-device input debug readout (see VrDebugHud).
+            if (VrDebugHud.Enabled)
+            {
+                try { debugHud = new VrDebugHud(GraphicsDevice, hudFont); }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[VrDebugHud] init failed: {ex.Message}");
+                    debugHud = null;
+                }
+            }
+
             LoadMainThemes();
             PlayLevelMusic();
         }
@@ -335,6 +347,16 @@ namespace ShittyMaze.Vr
             UpdateBullets(deltaTime);
 
             banner?.Update(deltaTime);
+
+            if (debugHud != null)
+            {
+                debugHud.SetText(
+                    $"R conn:{(input.IsConnected ? 1 : 0)}" +
+                    $" grip:{(weapon == null ? "no-model" : (weapon.Tracked ? "ok" : "lost"))}" +
+                    $" stick:({input.RightStick.X:+0.00;-0.00;0.00},{input.RightStick.Y:+0.00;-0.00;0.00})" +
+                    $" trig:{input.RightTriggerValue:0.00}");
+                debugHud.Update(deltaTime);
+            }
 
             if (goalObject != null && goalObject.CheckCollision(player.Position))
             {
@@ -524,6 +546,7 @@ namespace ShittyMaze.Vr
                             DrawScene(view, projection, cameraRig.GetEyePosition(eye));
                             weapon?.Draw(view, projection);
                             banner?.Draw(view, projection, cameraRig);
+                            debugHud?.Draw(view, projection, cameraRig);
 
                             // Resolve eye rendertarget.
                             GraphicsDevice.SetRenderTarget(null);

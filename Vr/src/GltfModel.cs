@@ -201,12 +201,18 @@ namespace ShittyMaze.Vr
 
                 JsonElement attributes = primitive.GetProperty("attributes");
 
-                float[] positions = ReadFloatAccessor(buffers, bufferViews, accessors, attributes.GetProperty("POSITION"), 3);
+                // glTF note: attribute values ("POSITION", "NORMAL", ...) and
+                // "indices" are integer indices INTO the "accessors" array, not
+                // accessor objects. Resolve the index before reading, otherwise
+                // GetProperty("bufferView") throws JsonElementHasWrongType
+                // (Number has no properties) and the whole model fails to load.
+                float[] positions = ReadFloatAccessor(buffers, bufferViews, accessors,
+                    accessors[attributes.GetProperty("POSITION").GetInt32()], 3);
                 float[] normals = attributes.TryGetProperty("NORMAL", out JsonElement normalAcc)
-                    ? ReadFloatAccessor(buffers, bufferViews, accessors, normalAcc, 3)
+                    ? ReadFloatAccessor(buffers, bufferViews, accessors, accessors[normalAcc.GetInt32()], 3)
                     : null;
                 float[] texcoords = attributes.TryGetProperty("TEXCOORD_0", out JsonElement uvAcc)
-                    ? ReadFloatAccessor(buffers, bufferViews, accessors, uvAcc, 2)
+                    ? ReadFloatAccessor(buffers, bufferViews, accessors, accessors[uvAcc.GetInt32()], 2)
                     : null;
 
                 int vertexBase = vertices.Count;
@@ -227,7 +233,8 @@ namespace ShittyMaze.Vr
                     vertices.Add(new VertexPositionNormalTexture(position, normal, uv));
                 }
 
-                int[] primIndices = ReadIndexAccessor(buffers, bufferViews, accessors, primitive.GetProperty("indices"));
+                int[] primIndices = ReadIndexAccessor(buffers, bufferViews, accessors,
+                    accessors[primitive.GetProperty("indices").GetInt32()]);
                 foreach (int index in primIndices)
                     indices.Add(vertexBase + index);
             }
@@ -242,8 +249,11 @@ namespace ShittyMaze.Vr
         {
             const int ComponentTypeFloat = 5126;
 
-            byte[] buffer = buffers[accessor.GetProperty("bufferView").GetInt32()];
+            // glTF chain: accessor -> bufferView -> buffer. The bufferView index
+            // must NOT index the buffers array (a file with several bufferViews
+            // over one binary buffer would throw IndexOutOfRange here).
             JsonElement view = bufferViews[accessor.GetProperty("bufferView").GetInt32()];
+            byte[] buffer = buffers[view.GetProperty("buffer").GetInt32()];
             int viewOffset = view.TryGetProperty("byteOffset", out JsonElement vo) ? vo.GetInt32() : 0;
             int accessorOffset = accessor.TryGetProperty("byteOffset", out JsonElement ao) ? ao.GetInt32() : 0;
             int count = accessor.GetProperty("count").GetInt32();
@@ -270,8 +280,9 @@ namespace ShittyMaze.Vr
             const int ComponentTypeUnsignedShort = 5123;
             const int ComponentTypeUnsignedInt = 5125;
 
-            byte[] buffer = buffers[accessor.GetProperty("bufferView").GetInt32()];
+            // Same accessor -> bufferView -> buffer chain as ReadFloatAccessor.
             JsonElement view = bufferViews[accessor.GetProperty("bufferView").GetInt32()];
+            byte[] buffer = buffers[view.GetProperty("buffer").GetInt32()];
             int viewOffset = view.TryGetProperty("byteOffset", out JsonElement vo) ? vo.GetInt32() : 0;
             int accessorOffset = accessor.TryGetProperty("byteOffset", out JsonElement ao) ? ao.GetInt32() : 0;
             int count = accessor.GetProperty("count").GetInt32();
