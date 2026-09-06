@@ -47,7 +47,12 @@ namespace ShittyMaze.Vr
         private readonly XrInput input = new XrInput();
         private VrWeapon weapon;
         private LevelBanner banner;
-        private VrDebugHud debugHud;
+
+        // Debug: A/B-button pose sampler (weapon rotation bug investigation)
+        // and its fading "нажата A/B" feedback banner below the view center.
+        private VrAimCalibrator aimCalibrator;
+        private LevelBanner debugBanner;
+        private bool debugFontHasCyrillic;
 
         // Reused game state (ported from Game1).
         private Player player;
@@ -235,16 +240,22 @@ namespace ShittyMaze.Vr
             banner = new LevelBanner(GraphicsDevice, hudFont);
             banner.Show($"Level {levelNumber}");
 
-            // Removable on-device input debug readout (see VrDebugHud).
-            if (VrDebugHud.Enabled)
+            // Debug calibration tooling (see VrAimCalibrator protocol notes).
+            aimCalibrator = new VrAimCalibrator();
+            SpriteFont debugFont = null;
+            try
             {
-                try { debugHud = new VrDebugHud(GraphicsDevice, hudFont); }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[VrDebugHud] init failed: {ex.Message}");
-                    debugHud = null;
-                }
+                debugFont = Content.Load<SpriteFont>("Fonts/DebugRu");
+                debugFontHasCyrillic = true;
             }
+            catch (Exception ex)
+            {
+                // Fallback: the ASCII Hud font (feedback text falls back to English).
+                Console.WriteLine($"Error loading debug font: {ex.Message}");
+                debugFont = hudFont;
+            }
+            if (debugFont != null)
+                debugBanner = new LevelBanner(GraphicsDevice, debugFont, verticalOffset: 0.35f);
 
             LoadMainThemes();
             PlayLevelMusic();
@@ -347,16 +358,7 @@ namespace ShittyMaze.Vr
             UpdateBullets(deltaTime);
 
             banner?.Update(deltaTime);
-
-            if (debugHud != null)
-            {
-                debugHud.SetText(
-                    $"R conn:{(input.IsConnected ? 1 : 0)}" +
-                    $" grip:{(weapon == null ? "no-model" : (weapon.Tracked ? "ok" : "lost"))}" +
-                    $" stick:({input.RightStick.X:+0.00;-0.00;0.00},{input.RightStick.Y:+0.00;-0.00;0.00})" +
-                    $" trig:{input.RightTriggerValue:0.00}");
-                debugHud.Update(deltaTime);
-            }
+            debugBanner?.Update(deltaTime);
 
             if (goalObject != null && goalObject.CheckCollision(player.Position))
             {
@@ -534,6 +536,19 @@ namespace ShittyMaze.Vr
                         cameraRig.Update(headset, player.Position);
                         weapon?.UpdatePose(headset, hands, cameraRig);
 
+                        // Debug pose samples on A/B press + fading feedback
+                        // text below the view center.
+                        aimCalibrator?.Update(input.APressed, input.BPressed, headset, hands, weapon);
+                        if (input.APressed || input.BPressed)
+                        {
+                            string pressedText = input.APressed ? "A" : "B";
+                            if (debugFontHasCyrillic)
+                                pressedText = "нажата " + pressedText;
+                            else
+                                pressedText = "PRESSED " + pressedText;
+                            debugBanner?.Show(pressedText);
+                        }
+
                         foreach (XREye eye in xrDevice.GetEyes())
                         {
                             RenderTarget2D rt = xrDevice.GetEyeRenderTarget(eye);
@@ -546,7 +561,7 @@ namespace ShittyMaze.Vr
                             DrawScene(view, projection, cameraRig.GetEyePosition(eye));
                             weapon?.Draw(view, projection);
                             banner?.Draw(view, projection, cameraRig);
-                            debugHud?.Draw(view, projection, cameraRig);
+                            debugBanner?.Draw(view, projection, cameraRig);
 
                             // Resolve eye rendertarget.
                             GraphicsDevice.SetRenderTarget(null);

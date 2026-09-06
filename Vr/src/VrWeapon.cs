@@ -8,15 +8,17 @@ namespace ShittyMaze.Vr
     /// <summary>
     /// The 3D TT-33 pistol mounted rigidly on the right controller.
     ///
-    /// Mounting ("pose rebasing"): real arm motion must be reproduced 1:1
-    /// relative to the head, while real-world head TRANSLATION (physical
-    /// walking/leaning) must not displace the gun. Both are achieved with
-    /// Pose3 algebra:
-    /// <code>
-    /// rel     = Inverse(realHeadPose) * RGripPose      // hand relative to real head
-    /// virtual = Pose3(headRotation, eyeAnchor)         // rotation-only virtual head
-    /// weaponPose = virtual * rel                       // re-based onto virtual head
-    /// </code>
+    /// Mounting: real arm rotation must be reproduced 1:1 relative to the
+    /// head, while real-world head TRANSLATION (physical walking/leaning)
+    /// must not displace the gun. Rotation: the world matrix is
+    /// <c>WeaponLocalOffset * M(gripOrientation)</c> - the local model fix is
+    /// applied first and the grip orientation last (rightmost). Because the
+    /// PICO grip pose is rigid with the head (grip = R * head with a constant
+    /// R, see <see cref="NaturalGripPitchDeg"/>), this keeps the
+    /// gun-relative-to-head orientation constant while turning the torso,
+    /// instead of swinging it around like the previous grip-first order did.
+    /// Translation: the world-axes hand offset (grip.T - head.T) is
+    /// re-anchored onto the virtual eye anchor.
     ///
     /// HP indication (requirement): the shared BasicEffect tint shows the
     /// remaining lives as weapon redness: 3 = white, 2 = redder, 1 = fully red
@@ -33,14 +35,33 @@ namespace ShittyMaze.Vr
         private const float WeaponLength = 0.24f;
 
         /// <summary>
-        /// Local offset applied after the grip pose: scales the unit-normalized
-        /// model, rotates the model's +X long axis (muzzle direction of the
-        /// baked TT-33) onto the grip pose's -Z forward, and shifts the grip
-        /// into the palm (slightly below and forward of the pose origin).
+        /// Natural-hold grip pitch measured on-device with the A-button
+        /// calibration ([CALIB] samples): while the controller is held in
+        /// front like a pistol, rel = inv(head)*grip is constant at
+        /// ~RotX(+73 deg) for all body yaws (80.0 / 67.5 / 74.0 / 72.5 deg,
+        /// axis ~pure X). Undoing it here aligns the "aim frame" (the frame
+        /// this local offset's translation lives in) with the head frame at
+        /// the natural hold.
+        /// </summary>
+        private const float NaturalGripPitchDeg = 73f;
+
+        /// <summary>
+        /// Model-local offset applied BEFORE the grip orientation (leftmost =
+        /// applied first in XNA row-vector math):
+        ///  1. scale the unit-normalized model;
+        ///  2. RotY(-90 deg): the baked TT-33's muzzle actually points along
+        ///     the model's -X (verified with the B-button calibration: the
+        ///     visible barrel followed the image of model -X and the user
+        ///     aligned it to head-forward at all four body yaws) - this maps
+        ///     model -X onto the gun frame's -Z forward, so world.Forward is
+        ///     the visible muzzle direction;
+        ///  3. RotX(-73 deg): undo the natural-hold grip pitch (above);
+        ///  4. palm shift, slightly below and forward in the aim frame.
         /// </summary>
         private static Matrix WeaponLocalOffset => Matrix.Identity
             * Matrix.CreateScale(WeaponLength)
-            * Matrix.CreateRotationY(MathHelper.PiOver2)
+            * Matrix.CreateRotationY(-MathHelper.PiOver2)
+            * Matrix.CreateRotationX(MathHelper.ToRadians(-NaturalGripPitchDeg))
             * Matrix.CreateTranslation(new Vector3(0f, -0.01f, -0.10f));
 
         /// <summary>How fast the HP tint lerps to its target value (1/dt).</summary>
@@ -60,11 +81,19 @@ namespace ShittyMaze.Vr
         private Vector3 currentTint = Vector3.One;
         private bool tracked;
 
+
         /// <summary>World-space muzzle origin (grip-pose based) for the hitscan ray.</summary>
         public Vector3 MuzzleOrigin { get; private set; }
 
         /// <summary>Normalized world-space shooting direction along the weapon's forward.</summary>
         public Vector3 MuzzleDirection { get; private set; } = new Vector3(0f, 0f, -1f);
+
+        /// <summary>
+        /// Pure orientation the weapon model is currently DRAWN with (rotation
+        /// part of the world matrix; scale/translation removed). Consumed by
+        /// <see cref="VrAimCalibrator"/> to log the displayed pistol rotation.
+        /// </summary>
+        public Quaternion DisplayRotation { get; private set; } = Quaternion.Identity;
 
         /// <summary>False while the right controller pose is unavailable (weapon hidden, no shooting).</summary>
         public bool Tracked => tracked;
@@ -98,20 +127,72 @@ namespace ShittyMaze.Vr
             if (!trackedNow)
                 return;
 
-            // Hand pose relative to the real head, re-based onto the virtual
-            // (rotation-only) head: real arm motion 1:1, physical body
-            // movement ignored.
-            Pose3 rel = Pose3.Inverse(headset.HeadPose) * hands.RGripPose;
-            Pose3 virtualHead = new Pose3(rig.HeadRotation, rig.EyeAnchor);
-            Pose3 weaponPose = virtualHead * rel;
+            // Weapon orientation: local model offset first, grip orientation
+            // LAST (rightmost). XNA row-vector matrices apply the leftmost
+            // factor first, so this order means: model -> gun frame -> aim
+            // frame -> grip pose -> world.
+            //
+            // WHY the grip must be rightmost: the PICO grip orientation is
+            // rigid with the head (G = R * H with constant R = inv(H)*G, the
+            // measured ~RotX(73 deg) natural-hold pose). With the grip
+            // applied first (the old M(grip) * fix * local order) the head
+            // rotation baked inside M(grip) never cancelled out of
+            // gun-relative-to-head = local * M(R) * M(H) * fix * local *
+            // inv(M(H)), so the pistol visibly swung when turning the torso.
+            // With the grip rightmost, gun-in-head = WeaponLocalOffset *
+            // M(rel) - constant while the controller is held rigidly in
+            // front of the head, i.e. true 1:1 controller tracking.
+            //
+            // Position: the virtual head uses the same orientation as the
+            // real head, only its position is replaced by EyeAnchor, so the
+            // world-axes hand offset (grip.T - head.T) is simply re-anchored:
+            //   weapon position = EyeAnchor + (grip.T - head.T)  [world axes]
+            // (physical head/body translation is ignored, arm offsets are 1:1).
+            world = WeaponLocalOffset * Matrix.CreateFromQuaternion(hands.RGripPose.Orientation);
 
-            world = Matrix.CreateFromPose(weaponPose) * WeaponLocalOffset;
+            Vector3 handOffset = hands.RGripPose.Translation - headset.HeadPose.Translation;
+            world.Translation = rig.EyeAnchor + handOffset + world.Translation;
 
             MuzzleOrigin = world.Translation;
             Vector3 forward = world.Forward;
             if (forward.LengthSquared() > 1e-6f)
                 forward.Normalize();
             MuzzleDirection = forward;
+
+            DisplayRotation = ExtractRotation(world);
+        }
+
+        /// <summary>
+        /// Extracts the pure rotation quaternion from a (uniformly scaled,
+        /// translated) transform matrix: normalizes the Right/Up basis rows,
+        /// re-orthogonalizes (Backward = Right x Up for the XNA row layout,
+        /// where row 3 is Backward = -Forward - using Forward there would
+        /// build a reflection and produce a non-unit garbage quaternion) and
+        /// converts to a quaternion in the same XNA convention as the
+        /// head/grip pose quaternions.
+        /// </summary>
+        private static Quaternion ExtractRotation(Matrix m)
+        {
+            Vector3 right = m.Right;
+            Vector3 up = m.Up;
+            if (right.LengthSquared() < 1e-12f || up.LengthSquared() < 1e-12f)
+                return Quaternion.Identity;
+
+            right.Normalize();
+            up.Normalize();
+
+            Vector3 backward = Vector3.Cross(right, up);
+            if (backward.LengthSquared() > 1e-12f)
+                backward.Normalize();
+
+            Matrix rotation = new Matrix(
+                right.X, right.Y, right.Z, 0f,
+                up.X, up.Y, up.Z, 0f,
+                backward.X, backward.Y, backward.Z, 0f,
+                0f, 0f, 0f, 1f);
+            Quaternion q = Quaternion.CreateFromRotationMatrix(rotation);
+            q.Normalize();
+            return q;
         }
 
         /// <summary>
@@ -144,5 +225,6 @@ namespace ShittyMaze.Vr
 
             model.Draw(world, view, projection);
         }
+
     }
 }
