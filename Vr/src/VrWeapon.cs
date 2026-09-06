@@ -147,10 +147,17 @@ namespace ShittyMaze.Vr
             world.Translation = rig.EyeAnchor + handOffset + world.Translation;
 
             MuzzleOrigin = world.Translation;
-            Vector3 forward = world.Forward;
-            if (forward.LengthSquared() > 1e-6f)
-                forward.Normalize();
-            MuzzleDirection = forward;
+
+            // Hitscan direction = the VISIBLE barrel. The baked TT-33's long
+            // axis (muzzle) lies along the MODEL's -X (see the
+            // WeaponLocalOffset note), whose world image is the NEGATED first
+            // row of the world matrix (-Right) - NOT world.Forward (the image
+            // of the model's -Z), which points sideways for this model and
+            // sent the ray ~90 deg off the aim.
+            Vector3 muzzle = -world.Right;
+            if (muzzle.LengthSquared() > 1e-6f)
+                muzzle.Normalize();
+            MuzzleDirection = muzzle;
         }
 
         /// <summary>
