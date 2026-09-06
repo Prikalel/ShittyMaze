@@ -34,10 +34,6 @@ namespace ShittyMaze.Vr
         private bool triggerHeld;
         private bool connectedLogged;
 
-        // A/B button previous state for edge detection (calibration samples).
-        private bool aHeld;
-        private bool bHeld;
-
         /// <summary>Right thumbstick vector with radial deadzone applied. +Y = push forward.</summary>
         public Vector2 RightStick { get; private set; }
 
@@ -46,12 +42,6 @@ namespace ShittyMaze.Vr
 
         /// <summary>Raw analog value of the right trigger (0..1), for debugging.</summary>
         public float RightTriggerValue { get; private set; }
-
-        /// <summary>True only on the frame the right controller A button goes down (edge).</summary>
-        public bool APressed { get; private set; }
-
-        /// <summary>True only on the frame the right controller B button goes down (edge).</summary>
-        public bool BPressed { get; private set; }
 
         /// <summary>Whether the right controller currently reports a usable state.</summary>
         public bool IsConnected { get; private set; }
@@ -109,14 +99,6 @@ namespace ShittyMaze.Vr
                 : trigger > TriggerPressThreshold;
             RightTriggerPressed = pressed && !triggerHeld;
             triggerHeld = pressed;
-
-            // --- A/B buttons with edge detection (aim-calibration samples) ---
-            bool a = state.Buttons.A == ButtonState.Pressed;
-            bool b = state.Buttons.B == ButtonState.Pressed;
-            APressed = a && !aHeld;
-            BPressed = b && !bHeld;
-            aHeld = a;
-            bHeld = b;
         }
 
         /// <summary>

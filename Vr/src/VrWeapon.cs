@@ -88,13 +88,6 @@ namespace ShittyMaze.Vr
         /// <summary>Normalized world-space shooting direction along the weapon's forward.</summary>
         public Vector3 MuzzleDirection { get; private set; } = new Vector3(0f, 0f, -1f);
 
-        /// <summary>
-        /// Pure orientation the weapon model is currently DRAWN with (rotation
-        /// part of the world matrix; scale/translation removed). Consumed by
-        /// <see cref="VrAimCalibrator"/> to log the displayed pistol rotation.
-        /// </summary>
-        public Quaternion DisplayRotation { get; private set; } = Quaternion.Identity;
-
         /// <summary>False while the right controller pose is unavailable (weapon hidden, no shooting).</summary>
         public bool Tracked => tracked;
 
@@ -158,41 +151,6 @@ namespace ShittyMaze.Vr
             if (forward.LengthSquared() > 1e-6f)
                 forward.Normalize();
             MuzzleDirection = forward;
-
-            DisplayRotation = ExtractRotation(world);
-        }
-
-        /// <summary>
-        /// Extracts the pure rotation quaternion from a (uniformly scaled,
-        /// translated) transform matrix: normalizes the Right/Up basis rows,
-        /// re-orthogonalizes (Backward = Right x Up for the XNA row layout,
-        /// where row 3 is Backward = -Forward - using Forward there would
-        /// build a reflection and produce a non-unit garbage quaternion) and
-        /// converts to a quaternion in the same XNA convention as the
-        /// head/grip pose quaternions.
-        /// </summary>
-        private static Quaternion ExtractRotation(Matrix m)
-        {
-            Vector3 right = m.Right;
-            Vector3 up = m.Up;
-            if (right.LengthSquared() < 1e-12f || up.LengthSquared() < 1e-12f)
-                return Quaternion.Identity;
-
-            right.Normalize();
-            up.Normalize();
-
-            Vector3 backward = Vector3.Cross(right, up);
-            if (backward.LengthSquared() > 1e-12f)
-                backward.Normalize();
-
-            Matrix rotation = new Matrix(
-                right.X, right.Y, right.Z, 0f,
-                up.X, up.Y, up.Z, 0f,
-                backward.X, backward.Y, backward.Z, 0f,
-                0f, 0f, 0f, 1f);
-            Quaternion q = Quaternion.CreateFromRotationMatrix(rotation);
-            q.Normalize();
-            return q;
         }
 
         /// <summary>

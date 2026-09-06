@@ -331,12 +331,3 @@
 /processor:FontDescriptionProcessor
 /processorParam:TextureFormat=Color
 /build:../../Web/wwwroot/Content/Fonts/Hud.spritefont;Fonts/Hud.xnb
-
-# Debug font with Cyrillic glyphs for the aim-calibration feedback text
-# ("нажата A / нажата B") - the Hud font only rasterizes ASCII.
-
-#begin Fonts/DebugRu.spritefont
-/importer:FontDescriptionImporter
-/processor:FontDescriptionProcessor
-/processorParam:TextureFormat=Color
-/build:Fonts/DebugRu.spritefont;Fonts/DebugRu.xnb

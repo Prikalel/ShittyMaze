@@ -42,10 +42,6 @@ namespace ShittyMaze.Vr
         private readonly VertexPositionTexture[] quadVertices;
         private readonly short[] quadIndices;
 
-        // Optional head-frame downward offset (meters) so several banners can
-        // stack without overlapping (used by the debug calibration banner).
-        private readonly float verticalOffset;
-
         private float remaining;
         private bool bakePending;
         private string pendingText;
@@ -53,11 +49,10 @@ namespace ShittyMaze.Vr
         /// <summary>True while the banner is visible (hold or fade phase).</summary>
         public bool IsActive => remaining > 0f;
 
-        public LevelBanner(GraphicsDevice graphicsDevice, SpriteFont font, float verticalOffset = 0f)
+        public LevelBanner(GraphicsDevice graphicsDevice, SpriteFont font)
         {
             this.graphicsDevice = graphicsDevice;
             this.font = font;
-            this.verticalOffset = verticalOffset;
             this.spriteBatch = new SpriteBatch(graphicsDevice);
 
             texture = new RenderTarget2D(
@@ -122,8 +117,7 @@ namespace ShittyMaze.Vr
 
             // Billboard facing the current head orientation: float in front of
             // the virtual eyes, always readable.
-            Vector3 down = Vector3.Transform(-Vector3.UnitY, rig.HeadRotation);
-            Vector3 position = rig.EyeAnchor + rig.HeadForward3D * Distance + down * verticalOffset;
+            Vector3 position = rig.EyeAnchor + rig.HeadForward3D * Distance;
             Matrix billboard = Matrix.CreateWorld(position, rig.HeadForward3D, Vector3.Up);
 
             float alpha = remaining > FadeSeconds ? 1f : remaining / FadeSeconds;
